@@ -79,6 +79,11 @@ const envSchema = z.object({
   ALGOLIA_SEARCH_KEY: z.string().optional(),
   ALGOLIA_INDEX_NAME: z.string().default('products'),
 
+  // Resend (email) — optional; API works without it
+  RESEND_API_KEY: z.string().optional(),
+  RESEND_FROM_EMAIL: z.string().default('noreply@denimisia.online'),
+  RESEND_FROM_NAME: z.string().default('Denimisia'),
+
   // Storefront URL used to build links inside transactional emails
   // (verify-email, password-reset, order-confirmation). MUST point at the
   // customer-facing site without a trailing slash.
