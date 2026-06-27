@@ -1,0 +1,17 @@
+[build]
+  command = "pnpm --filter web build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[[redirects]]
+  from = "/api/*"
+  to = "https://api.denimisia.online/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
