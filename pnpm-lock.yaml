@@ -533,13 +533,14 @@ importers:
         version: 5.9.2
 
   packages/types:
+    dependencies:
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.2
     devDependencies:
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      typescript:
-        specifier: ^5.7.3
-        version: 5.9.2
 
   packages/typescript-config: {}
 
