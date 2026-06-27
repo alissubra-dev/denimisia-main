@@ -1,14 +1,28 @@
-import { Global, Module, OnModuleInit, Logger } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 import { REDIS_CLIENT } from './redis.decorator';
 
-function createRedisClient(config: ConfigService): Redis | null {
+// Dummy Redis client that does nothing when Redis is not configured
+class DummyRedis {
+  async get() { return null; }
+  async set() { return 'OK'; }
+  async setex() { return 'OK'; }
+  async del() { return 0; }
+  async incr() { return 1; }
+  async expire() { return 1; }
+  async zadd() { return 0; }
+  async zcard() { return 0; }
+  async zrange() { return []; }
+  async zremrangebyscore() { return 0; }
+}
+
+function createRedisClient(config: ConfigService): Redis {
   const redisUrl = config.get<string>('REDIS_URL');
 
-  // If REDIS_URL is not provided, return null (no Redis)
+  // If REDIS_URL is not provided, return dummy client
   if (!redisUrl) {
-    return null;
+    return new DummyRedis() as unknown as Redis;
   }
 
   return new Redis(redisUrl, {
