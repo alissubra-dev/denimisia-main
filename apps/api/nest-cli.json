@@ -5,7 +5,8 @@
   "compilerOptions": {
     "deleteOutDir": true,
     "assets": [
-      { "include": "modules/bot/fallback/*.md", "outDir": "dist/src" }
+      { "include": "**/*.md", "outDir": "dist" },
+      { "include": "modules/bot/fallback/*.md", "outDir": "dist" }
     ]
   }
 }
