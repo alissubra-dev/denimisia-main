@@ -16,18 +16,28 @@ export interface SendEmailResult {
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
-  private readonly client: Resend;
+  private readonly client: Resend | null = null;
   private readonly fromAddress: string;
+  private readonly isConfigured: boolean;
 
   constructor(private readonly config: ConfigService) {
-    const apiKey = this.config.getOrThrow<string>('RESEND_API_KEY');
-    const fromEmail = this.config.getOrThrow<string>('RESEND_FROM_EMAIL');
-    const fromName = this.config.getOrThrow<string>('RESEND_FROM_NAME');
-    this.client = new Resend(apiKey);
+    const apiKey = this.config.get<string>('RESEND_API_KEY');
+    const fromEmail = this.config.get<string>('RESEND_FROM_EMAIL') || 'noreply@denimisia.online';
+    const fromName = this.config.get<string>('RESEND_FROM_NAME') || 'Denimisia';
+
+    this.isConfigured = !!apiKey;
+    this.client = apiKey ? new Resend(apiKey) : null;
     this.fromAddress = `${fromName} <${fromEmail}>`;
   }
 
   async send(input: SendEmailInput): Promise<SendEmailResult> {
+    if (!this.client || !this.isConfigured) {
+      this.logger.warn(
+        `Email not sent (Resend not configured): ${input.subject} to ${input.to}`,
+      );
+      return { id: 'mock-email-id' };
+    }
+
     const payload = {
       from: this.fromAddress,
       to: input.to,
