@@ -27,7 +27,12 @@ const envSchema = z.object({
   DATABASE_URL: z.string().url(),
 
   // Redis (optional - API works without it)
-  REDIS_URL: z.string().url().optional(),
+  REDIS_URL: z
+    .string()
+    .optional()
+    .refine((val) => !val || val.startsWith('redis://'), {
+      message: 'REDIS_URL must be a valid redis:// URL or omitted',
+    }),
 
   // JWT — minimum 32 chars enforced in ALL environments (dev included).
   // Placeholder strings are rejected even in development to prevent
