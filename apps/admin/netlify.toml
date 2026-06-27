@@ -1,6 +1,6 @@
 [build]
   command = "pnpm --filter admin build"
-  publish = ".next"
+  publish = "apps/admin/.next"
 
 [build.environment]
   NODE_VERSION = "20"
