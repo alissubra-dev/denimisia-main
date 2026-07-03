@@ -29,6 +29,7 @@ import {
   Min,
 } from 'class-validator';
 import { FileInterceptor } from '@nestjs/platform-express';
+import type { Multer } from 'multer';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'crypto';
@@ -82,7 +83,7 @@ export class UploadsController {
   @UseInterceptors(FileInterceptor('file'))
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   async directUpload(
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file: Multer.File,
     @Body('folder') folder: string,
     @Body('contentType') contentType: string,
   ) {
