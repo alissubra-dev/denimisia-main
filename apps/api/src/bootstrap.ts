@@ -19,7 +19,6 @@ import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { corsOrigins, isProd } from './common/env';
-import multer from 'multer';
 
 export async function createApp(): Promise<INestApplication> {
   const logger = new Logger('Bootstrap');
@@ -38,16 +37,6 @@ export async function createApp(): Promise<INestApplication> {
   app.use(cookieParser());
   app.use(json({ limit: '1mb' }));
   app.use(urlencoded({ extended: true, limit: '1mb' }));
-
-  // Configure multer for file uploads (10MB limit)
-  app.use(
-    multer({
-      limits: {
-        fileSize: 10 * 1024 * 1024, // 10MB
-      },
-      storage: multer.memoryStorage(),
-    }).any(),
-  );
 
   if (isProd()) {
     const http = app.getHttpAdapter().getInstance() as {
