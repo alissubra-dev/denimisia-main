@@ -7,7 +7,7 @@
 
 [[redirects]]
   from = "/api/*"
-  to = "https://api.denimisia.online/api/:splat"
+  to = "https://denimisia-api-im1x.onrender.com/api/:splat"
   status = 200
   force = true
 
