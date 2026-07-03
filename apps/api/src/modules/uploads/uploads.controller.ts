@@ -6,6 +6,8 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { UploadsService } from './uploads.service';
@@ -26,6 +28,10 @@ import {
   Max,
   Min,
 } from 'class-validator';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { ConfigService } from '@nestjs/config';
+import { randomUUID } from 'crypto';
 
 const MAX_SIZE_BYTES = 10 * 1024 * 1024;
 
@@ -60,7 +66,84 @@ class ProcessImageDto {
 
 @Controller('uploads')
 export class UploadsController {
-  constructor(private uploadsService: UploadsService) {}
+  constructor(
+    private uploadsService: UploadsService,
+    private config: ConfigService,
+  ) {}
+
+  /**
+   * Direct upload endpoint that streams the file to R2 from the server.
+   * This avoids CORS issues when the browser tries to upload directly to R2.
+   * The client should use this instead of the presign flow.
+   */
+  @Post('direct')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SUPPORT_STAFF)
+  @UseInterceptors(FileInterceptor('file'))
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
+  async directUpload(
+    @UploadedFile() file: Express.Multer.File,
+    @Body('folder') folder: string,
+    @Body('contentType') contentType: string,
+  ) {
+    // Validate folder
+    const allowedFolders = ['products', 'reviews', 'cms', 'banners', 'bundles', 'sections'];
+    if (!folder || !allowedFolders.includes(folder)) {
+      throw new Error('Invalid folder');
+    }
+
+    // Validate content type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
+    if (!contentType || !allowedTypes.includes(contentType)) {
+      throw new Error('Invalid content type');
+    }
+
+    // Validate size
+    if (file.size > MAX_SIZE_BYTES) {
+      throw new Error('File too large (max 10MB)');
+    }
+
+    // Generate key
+    const ext = contentType.split('/')[1];
+    const key = `${folder}/${randomUUID()}.${ext}`;
+
+    // Get R2 client from service
+    const accountId = this.config.get<string>('R2_ACCOUNT_ID');
+    const accessKeyId = this.config.get<string>('R2_ACCESS_KEY_ID');
+    const secretAccessKey = this.config.get<string>('R2_SECRET_ACCESS_KEY');
+    const bucket = this.config.get<string>('R2_BUCKET_NAME');
+    const publicUrl = this.config.get<string>('R2_PUBLIC_URL') ?? '';
+
+    if (!accountId || !accessKeyId || !secretAccessKey || !bucket) {
+      throw new Error('R2 not configured');
+    }
+
+    const s3 = new S3Client({
+      region: 'auto',
+      endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+      credentials: { accessKeyId, secretAccessKey },
+      requestChecksumCalculation: 'WHEN_REQUIRED',
+      responseChecksumValidation: 'WHEN_REQUIRED',
+    });
+
+    // Upload to R2
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: bucket,
+        Key: key,
+        Body: file.buffer,
+        ContentType: contentType,
+        ContentLength: file.size,
+      }),
+    );
+
+    const publicFileUrl = `${publicUrl}/${key}`;
+
+    return {
+      key,
+      publicUrl: publicFileUrl,
+    };
+  }
 
   @Post('presign')
   @UseGuards(JwtAuthGuard, RolesGuard)

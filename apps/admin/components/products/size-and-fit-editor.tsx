@@ -126,7 +126,9 @@ export function SizeAndFitEditor({
           <span className="text-[10px] uppercase tracking-widest text-secondary">
             Live preview
           </span>
-          {silhouette ? (
+          {silhouettes === null ? (
+            <p className="text-xs text-secondary">Loading silhouettes…</p>
+          ) : silhouette ? (
             <SilhouetteCanvas
               silhouette={silhouette}
               fit={effectiveFit}
@@ -137,7 +139,7 @@ export function SizeAndFitEditor({
               }}
             />
           ) : (
-            <p className="text-xs text-secondary">Loading silhouettes…</p>
+            <p className="text-xs text-secondary">No silhouettes available</p>
           )}
           <div className="flex gap-2">
             <button

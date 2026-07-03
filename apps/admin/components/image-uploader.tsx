@@ -21,12 +21,6 @@ const ALLOWED_MIMES = new Set([
 ]);
 const MAX_SIZE_BYTES = 10 * 1024 * 1024;
 
-interface PresignResponse {
-  uploadUrl: string;
-  key: string;
-  publicUrl: string;
-}
-
 interface ProcessResponse {
   variants: Record<string, string>;
 }
@@ -168,26 +162,33 @@ export function ImageUploader({
           ),
         );
 
-        const presign = await adminFetch<PresignResponse>(
-          '/uploads/presign',
-          token,
+        // Use direct upload endpoint to avoid CORS issues with R2
+        const formData = new FormData();
+        formData.append('file', uploadFile);
+        formData.append('folder', folder);
+        formData.append('contentType', uploadFile.type);
+
+        // Upload through API server (which streams to R2)
+        const uploadResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1'}/uploads/direct`,
           {
             method: 'POST',
-            body: JSON.stringify({
-              folder,
-              contentType: uploadFile.type,
-              expectedSize: uploadFile.size,
-            }),
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            body: formData,
           },
         );
 
-        await putWithProgress(presign.uploadUrl, uploadFile, (pct) =>
-          updateProgress(itemId, pct),
-        );
+        if (!uploadResponse.ok) {
+          const errorText = await uploadResponse.text();
+          throw new Error(`Upload failed: ${errorText}`);
+        }
 
-        // PUT succeeded. Kick off server-side variant generation. The form
-        // saves the original URL; storefront derives variants from it via the
-        // shared naming convention (see apps/web/lib/image.ts).
+        const uploadResult = await uploadResponse.json();
+        const { key, publicUrl } = uploadResult;
+
+        // Server-side variant generation
         setItems((prev) =>
           prev.map((it) =>
             it.id === itemId
@@ -198,7 +199,7 @@ export function ImageUploader({
 
         await adminFetch<ProcessResponse>('/uploads/process', token, {
           method: 'POST',
-          body: JSON.stringify({ key: presign.key }),
+          body: JSON.stringify({ key }),
         });
 
         setItems((prev) =>
@@ -209,7 +210,7 @@ export function ImageUploader({
               ...it,
               status: 'done',
               progress: 100,
-              publicUrl: presign.publicUrl,
+              publicUrl: publicUrl,
               previewObjectUrl: undefined,
             };
           }),
@@ -496,56 +497,4 @@ export function ImageUploader({
       )}
     </div>
   );
-}
-
-/**
- * PUT a File to a presigned URL with XHR so we get upload-progress events.
- * `fetch()` doesn't expose upload progress without ReadableStream tricks that
- * aren't widely supported, so XHR is the pragmatic choice here.
- */
-function putWithProgress(
-  url: string,
-  file: File,
-  onProgress: (pct: number) => void,
-): Promise<void> {
-  return new Promise<void>((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open('PUT', url);
-    xhr.setRequestHeader('Content-Type', file.type);
-
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) {
-        const pct = Math.min(100, Math.round((e.loaded / e.total) * 100));
-        onProgress(pct);
-      }
-    };
-
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        onProgress(100);
-        resolve();
-      } else {
-        reject(
-          new Error(`R2 upload failed (${xhr.status}): ${xhr.responseText.slice(0, 200)}`),
-        );
-      }
-    };
-
-    xhr.onerror = () => {
-      // xhr.onerror fires for: CORS rejection, network unreachable, DNS fail,
-      // and TLS error. The browser doesn't expose which. Status is typically
-      // 0 in this state. The actual reason usually shows up in the browser's
-      // Console (CORS errors are logged there but not exposed to JS).
-      reject(
-        new Error(
-          `Upload failed: browser blocked the request (status=${xhr.status}). ` +
-            'Check the browser Console tab for a CORS or network error message.',
-        ),
-      );
-    };
-    xhr.ontimeout = () => reject(new Error('Upload timed out'));
-    xhr.onabort = () => reject(new Error('Upload aborted'));
-
-    xhr.send(file);
-  });
 }
