@@ -79,7 +79,7 @@ const nextConfig = {
       "style-src 'self' 'unsafe-inline' fonts.googleapis.com",
       "font-src 'self' fonts.gstatic.com data:",
       "img-src 'self' data: blob: https:",
-      "connect-src 'self' http://localhost:3001 https://denimisiabd.com https://*.denimisiabd.com https://*.denimisia.com https://*.supabase.co https://*.r2.cloudflarestorage.com https://*.r2.dev cloudflareinsights.com",
+      "connect-src 'self' http://localhost:3001 https://denimisia.online https://*.denimisia.online https://denimisia-api-im1x.onrender.com https://*.supabase.co https://*.r2.cloudflarestorage.com https://*.r2.dev cloudflareinsights.com",
       `frame-ancestors 'self' ${adminOrigins}`,
       "object-src 'none'",
       "base-uri 'self'",

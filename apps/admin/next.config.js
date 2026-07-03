@@ -38,7 +38,7 @@ const nextConfig = {
             // prefix). The public CDN is `*.r2.dev`. Listing the full hosts
             // here would tie the CSP to one bucket; the wildcards stay
             // future-proof across bucket rotations.
-            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' http://localhost:3001 https://denimisiabd.com https://*.denimisiabd.com https://*.denimisia.com https://*.r2.cloudflarestorage.com https://*.r2.dev; frame-src 'self' http://localhost:3000 https://denimisiabd.com https://*.denimisiabd.com https://*.denimisia.com; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'",
+            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' http://localhost:3001 https://denimisia.online https://*.denimisia.online https://denimisia-api-im1x.onrender.com https://*.r2.cloudflarestorage.com https://*.r2.dev; frame-src 'self' http://localhost:3000 https://denimisia.online https://*.denimisia.online; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'",
           },
         ],
       },
