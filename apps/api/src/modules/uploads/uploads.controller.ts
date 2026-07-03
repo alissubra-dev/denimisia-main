@@ -87,20 +87,25 @@ export class UploadsController {
     @Body('folder') folder: string,
     @Body('contentType') contentType: string,
   ) {
+    // Debug: Check if file is received
+    if (!file) {
+      throw new Error('No file uploaded. Make sure the field name is "file".');
+    }
+
     // Validate folder
     const allowedFolders = ['products', 'reviews', 'cms', 'banners', 'bundles', 'sections'];
     if (!folder || !allowedFolders.includes(folder)) {
-      throw new Error('Invalid folder');
+      throw new Error(`Invalid folder: ${folder}`);
     }
 
     // Validate content type
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
     if (!contentType || !allowedTypes.includes(contentType)) {
-      throw new Error('Invalid content type');
+      throw new Error(`Invalid content type: ${contentType}`);
     }
 
     // Validate size
-    if (file.size > MAX_SIZE_BYTES) {
+    if (!file.size || file.size > MAX_SIZE_BYTES) {
       throw new Error('File too large (max 10MB)');
     }
 
