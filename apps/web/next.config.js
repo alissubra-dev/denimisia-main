@@ -27,6 +27,8 @@ const nextConfig = {
   },
 
   images: {
+    // Disable image optimization for Netlify compatibility with Next.js 16
+    unoptimized: true,
     // Limit image sizes for faster loads
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256],
