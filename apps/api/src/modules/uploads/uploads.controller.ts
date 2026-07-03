@@ -80,7 +80,11 @@ export class UploadsController {
   @Post('direct')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SUPPORT_STAFF)
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 10 * 1024 * 1024 },
+    }),
+  )
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   async directUpload(
     @UploadedFile() file: Multer.File,
