@@ -92,24 +92,34 @@ export class UploadsController {
     @UploadedFile() file: Multer.File,
     @Req() req: Request,
   ) {
-    const folder = (req.body as Record<string, string>).folder;
-    const contentType = (req.body as Record<string, string>).contentType;
+    const body = req.body as Record<string, string>;
+    const folder = body.folder;
+    const contentType = body.contentType;
 
-    // Debug: Check if file is received
+    // Debug: Log what's received
+    console.log('Upload request:', {
+      fileExists: !!file,
+      fileField: file?.fieldname,
+      folder,
+      contentType,
+      bodyKeys: Object.keys(body)
+    });
+
+    // Check if file is received
     if (!file) {
-      throw new Error('No file uploaded. Make sure the field name is "file".');
+      throw new Error(`No file uploaded. Received file: ${JSON.stringify(file)}, body: ${JSON.stringify(body)}`);
     }
 
     // Validate folder
     const allowedFolders = ['products', 'reviews', 'cms', 'banners', 'bundles', 'sections'];
     if (!folder || !allowedFolders.includes(folder)) {
-      throw new Error(`Invalid folder: ${folder}`);
+      throw new Error(`Invalid folder: "${folder}" - must be one of: ${allowedFolders.join(', ')}`);
     }
 
     // Validate content type
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
     if (!contentType || !allowedTypes.includes(contentType)) {
-      throw new Error(`Invalid content type: ${contentType}`);
+      throw new Error(`Invalid content type: "${contentType}" - must be one of: ${allowedTypes.join(', ')}`);
     }
 
     // Validate size
@@ -120,6 +130,7 @@ export class UploadsController {
     // Generate key
     const ext = contentType.split('/')[1];
     const key = `${folder}/${randomUUID()}.${ext}`;
+    console.log('Generated key:', key);
 
     // Get R2 client from service
     const accountId = this.config.get<string>('R2_ACCOUNT_ID');
