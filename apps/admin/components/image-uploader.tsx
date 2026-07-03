@@ -186,7 +186,15 @@ export function ImageUploader({
         }
 
         const uploadResult = await uploadResponse.json();
-        const { key, publicUrl } = uploadResult;
+        console.log('Upload result:', uploadResult);
+
+        // Handle nested response format
+        const resultKey = uploadResult.key ?? uploadResult.data?.key;
+        const resultUrl = uploadResult.publicUrl ?? uploadResult.data?.publicUrl;
+
+        if (!resultKey) {
+          throw new Error(`Upload succeeded but no key returned: ${JSON.stringify(uploadResult)}`);
+        }
 
         // Server-side variant generation
         setItems((prev) =>
@@ -199,7 +207,7 @@ export function ImageUploader({
 
         await adminFetch<ProcessResponse>('/uploads/process', token, {
           method: 'POST',
-          body: JSON.stringify({ key }),
+          body: JSON.stringify({ key: resultKey }),
         });
 
         setItems((prev) =>
@@ -210,7 +218,7 @@ export function ImageUploader({
               ...it,
               status: 'done',
               progress: 100,
-              publicUrl: publicUrl,
+              publicUrl: resultUrl,
               previewObjectUrl: undefined,
             };
           }),
