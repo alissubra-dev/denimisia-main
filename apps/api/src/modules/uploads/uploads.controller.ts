@@ -127,9 +127,24 @@ export class UploadsController {
       throw new Error('File too large (max 10MB)');
     }
 
-    // Generate key
-    const ext = contentType.split('/')[1];
+    // Generate key - use fallback if contentType is invalid
+    let ext = 'jpg';
+    if (contentType) {
+      const parts = contentType.split('/');
+      ext = parts[1] || 'jpg';
+    }
+
+    // Fallback to file extension if contentType is invalid
+    if (!allowedTypes.includes(contentType) && file.originalname) {
+      const nameParts = file.originalname.split('.');
+      if (nameParts.length > 1) {
+        ext = nameParts[nameParts.length - 1].toLowerCase();
+        if (ext === 'jpeg') ext = 'jpg';
+      }
+    }
+
     const key = `${folder}/${randomUUID()}.${ext}`;
+    console.log('Final key:', key, 'ext:', ext);
     console.log('Generated key:', key);
 
     // Get R2 client from service
