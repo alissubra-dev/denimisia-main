@@ -8,8 +8,10 @@ import {
   HttpStatus,
   UploadedFile,
   UseInterceptors,
+  Req,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
+import type { Request } from 'express';
 import { UploadsService } from './uploads.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -88,9 +90,11 @@ export class UploadsController {
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   async directUpload(
     @UploadedFile() file: Multer.File,
-    @Body('folder') folder: string,
-    @Body('contentType') contentType: string,
+    @Req() req: Request,
   ) {
+    const folder = (req.body as Record<string, string>).folder;
+    const contentType = (req.body as Record<string, string>).contentType;
+
     // Debug: Check if file is received
     if (!file) {
       throw new Error('No file uploaded. Make sure the field name is "file".');
