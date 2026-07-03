@@ -38,6 +38,7 @@ import { EmailModule } from './modules/email/email.module';
 import { BotModule } from './modules/bot/bot.module';
 import { InboxModule } from './modules/inbox/inbox.module';
 import { SilhouettesModule } from './modules/silhouettes/silhouettes.module';
+import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
   imports: [
@@ -78,6 +79,7 @@ import { SilhouettesModule } from './modules/silhouettes/silhouettes.module';
     BotModule,
     InboxModule,
     SilhouettesModule,
+    AdminModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
