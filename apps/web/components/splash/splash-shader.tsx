@@ -104,20 +104,32 @@ export function SplashShader() {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) {
+      console.error('SplashShader: canvas not found');
+      return;
+    }
 
     const gl = canvas.getContext('webgl', {
       antialias: false,
       premultipliedAlpha: false,
       preserveDrawingBuffer: false,
     });
-    if (!gl) return;
+    if (!gl) {
+      console.error('SplashShader: WebGL not available');
+      return;
+    }
 
     const vs = compile(gl, VS, gl.VERTEX_SHADER);
     const fs = compile(gl, FS, gl.FRAGMENT_SHADER);
-    if (!vs || !fs) return;
+    if (!vs || !fs) {
+      console.error('SplashShader: shader compilation failed');
+      return;
+    }
     const prog = gl.createProgram();
-    if (!prog) return;
+    if (!prog) {
+      console.error('SplashShader: program creation failed');
+      return;
+    }
     gl.attachShader(prog, vs);
     gl.attachShader(prog, fs);
     gl.linkProgram(prog);
@@ -125,6 +137,7 @@ export function SplashShader() {
       console.error('Splash shader link error:', gl.getProgramInfoLog(prog));
       return;
     }
+    console.log('SplashShader: WebGL initialized successfully');
 
     const quad = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, quad);

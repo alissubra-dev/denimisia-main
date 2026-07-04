@@ -37,8 +37,6 @@ export function SplashGate() {
           className="fixed inset-0 z-[100] flex cursor-pointer select-none items-center justify-center overflow-hidden bg-[#030302]"
         >
           <SplashShader />
-          {/* CSS fallback gradient when WebGL is not available */}
-          <div className="pointer-events-none absolute inset-0 animate-gradient bg-gradient-to-br from-[#0a0a0f] via-[#1a1a2e] to-[#0a0a0f]" />
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.35)_70%,rgba(0,0,0,0.6)_100%)]" />
           <div className="relative z-10 flex flex-col items-center gap-5">
             <motion.span

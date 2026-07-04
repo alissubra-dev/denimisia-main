@@ -370,15 +370,6 @@ html[data-edit-mode='1'] #denimisia-splash-prerender {
   from { opacity: 0; transform: translate3d(0, -8px, 0); }
   to   { opacity: 1; transform: translate3d(0, 0, 0); }
 }
-@keyframes gradient {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-.animate-gradient {
-  background-size: 200% 200%;
-  animation: gradient 8s ease infinite;
-}
 
 /* CMS edit-mode preview: storefront loaded with ?edit=1 inside admin's iframe.
    Storefront hero/banner sections use a 40% dark overlay (bg-ink/40) for text
