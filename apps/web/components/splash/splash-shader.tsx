@@ -122,11 +122,11 @@ export function SplashShader() {
     });
     const gl = gl1 || gl2;
     if (!gl) {
-      console.error('SplashShader: WebGL not available, trying fallback');
-      // Don't return - let it try the fallback
-    } else {
-      console.log('SplashShader: WebGL context obtained');
+      console.error('SplashShader: WebGL not available, using fallback');
+      return;
     }
+
+    console.log('SplashShader: WebGL context obtained');
 
     const vs = compile(gl, VS, gl.VERTEX_SHADER);
     const fs = compile(gl, FS, gl.FRAGMENT_SHADER);
