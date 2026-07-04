@@ -109,14 +109,24 @@ export function SplashShader() {
       return;
     }
 
-    const gl = canvas.getContext('webgl', {
+    // Try WebGL first, fall back to WebGL1 if needed
+    let gl = canvas.getContext('webgl', {
       antialias: false,
       premultipliedAlpha: false,
       preserveDrawingBuffer: false,
     });
     if (!gl) {
-      console.error('SplashShader: WebGL not available');
-      return;
+      gl = canvas.getContext('webgl1', {
+        antialias: false,
+        premultipliedAlpha: false,
+        preserveDrawingBuffer: false,
+      });
+    }
+    if (!gl) {
+      console.error('SplashShader: WebGL not available, trying fallback');
+      // Don't return - let it try the fallback
+    } else {
+      console.log('SplashShader: WebGL context obtained');
     }
 
     const vs = compile(gl, VS, gl.VERTEX_SHADER);

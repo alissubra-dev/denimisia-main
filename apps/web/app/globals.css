@@ -371,6 +371,46 @@ html[data-edit-mode='1'] #denimisia-splash-prerender {
   to   { opacity: 1; transform: translate3d(0, 0, 0); }
 }
 
+/* Smoky animated background for splash screen fallback */
+@keyframes smoke1 {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; }
+  25% { transform: translate(20px, -20px) scale(1.1); opacity: 0.4; }
+  50% { transform: translate(-10px, 10px) scale(0.9); opacity: 0.2; }
+  75% { transform: translate(15px, 5px) scale(1.05); opacity: 0.35; }
+}
+@keyframes smoke2 {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.25; }
+  33% { transform: translate(-25px, 15px) scale(1.15); opacity: 0.35; }
+  66% { transform: translate(10px, -15px) scale(0.85); opacity: 0.15; }
+}
+@keyframes smoke3 {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.2; }
+  50% { transform: translate(-15px, -10px) scale(1.2); opacity: 0.3; }
+}
+.animate-smoke {
+  position: relative;
+  overflow: hidden;
+}
+.animate-smoke::before,
+.animate-smoke::after {
+  content: '';
+  position: absolute;
+  width: 150%;
+  height: 150%;
+  top: -25%;
+  left: -25%;
+  background: radial-gradient(circle at 30% 40%, rgba(80, 80, 120, 0.4), transparent 50%),
+              radial-gradient(circle at 70% 60%, rgba(60, 60, 100, 0.3), transparent 40%),
+              radial-gradient(circle at 50% 50%, rgba(100, 100, 140, 0.25), transparent 45%);
+}
+.animate-smoke::before {
+  animation: smoke1 15s ease-in-out infinite;
+}
+.animate-smoke::after {
+  animation: smoke2 12s ease-in-out infinite reverse;
+  animation-delay: -5s;
+}
+
 /* CMS edit-mode preview: storefront loaded with ?edit=1 inside admin's iframe.
    Storefront hero/banner sections use a 40% dark overlay (bg-ink/40) for text
    contrast on photography. That overlay makes the preview pane in the admin

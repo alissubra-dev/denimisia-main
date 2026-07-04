@@ -36,6 +36,8 @@ export function SplashGate() {
           transition={{ duration: 0.35, ease: EASE_STANDARD }}
           className="fixed inset-0 z-[100] flex cursor-pointer select-none items-center justify-center overflow-hidden bg-[#030302]"
         >
+          {/* CSS animated smoky background as fallback */}
+          <div className="pointer-events-none absolute inset-0 bg-[#030302] animate-smoke" />
           <SplashShader />
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.35)_70%,rgba(0,0,0,0.6)_100%)]" />
           <div className="relative z-10 flex flex-col items-center gap-5">
