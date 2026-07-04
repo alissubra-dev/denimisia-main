@@ -24,13 +24,28 @@ export async function adminFetch<T>(
     headers,
   });
 
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.message ?? `API error ${res.status}`);
+  // Handle empty responses (e.g., DELETE returns 204 No Content)
+  const text = await res.text();
+  if (!text) {
+    return undefined as T;
   }
 
-  const json = await res.json();
-  return (json.data ?? json) as T;
+  if (!res.ok) {
+    let body = {};
+    try {
+      body = JSON.parse(text);
+    } catch {}
+    throw new Error((body as { message?: string }).message ?? `API error ${res.status}`);
+  }
+
+  let json = {};
+  try {
+    json = JSON.parse(text);
+  } catch {
+    // Return the text as-is if not JSON
+    return text as unknown as T;
+  }
+  return (json as { data?: T }).data ?? json as T;
 }
 
 export async function adminPost<T>(
