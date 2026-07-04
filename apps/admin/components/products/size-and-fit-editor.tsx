@@ -471,14 +471,14 @@ function Select({
 // PANTS can use numeric waist-size keys (24, 26, 28...) or letter sizes.
 // SHIRTS/JACKETS use a letter-size lookup (XS..XXL); unknown keys fall through.
 
-const PANTS_LETTER_DEFAULTS: Record<string, Partial<Record<string, [number, number]>> = {
+const PANTS_LETTER_DEFAULTS = {
   XS:  { waist: [24, 25], hip: [33, 35], inseam: [30, 30], thigh: [21, 23], 'front rise': [10, 10], 'back rise': [13, 13], 'hem opening': [20, 20], 'waistband height': [2, 2] },
   S:   { waist: [26, 27], hip: [35, 37], inseam: [30, 30], thigh: [22, 24], 'front rise': [10, 10], 'back rise': [13, 13], 'hem opening': [21, 21], 'waistband height': [2, 2] },
   M:   { waist: [28, 29], hip: [37, 39], inseam: [32, 32], thigh: [23, 25], 'front rise': [11, 11], 'back rise': [14, 14], 'hem opening': [22, 22], 'waistband height': [2, 2] },
   L:   { waist: [30, 31], hip: [39, 41], inseam: [32, 32], thigh: [24, 26], 'front rise': [11, 11], 'back rise': [14, 14], 'hem opening': [23, 23], 'waistband height': [2, 2] },
   XL:  { waist: [32, 33], hip: [41, 43], inseam: [32, 32], thigh: [25, 27], 'front rise': [12, 12], 'back rise': [15, 15], 'hem opening': [24, 24], 'waistband height': [2, 2] },
   XXL: { waist: [34, 35], hip: [43, 45], inseam: [32, 32], thigh: [26, 28], 'front rise': [12, 12], 'back rise': [15, 15], 'hem opening': [25, 25], 'waistband height': [2, 2] },
-};
+} as const;
 
 const SHIRT_LETTER_DEFAULTS: Record<
   string,
