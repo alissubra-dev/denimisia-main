@@ -50,7 +50,7 @@ export default function CmsHubPage() {
       setStyles(stylesRes);
       // Filter to CMS-related events on the client (the audit endpoint
       // doesn't support an action-prefix filter, so we slice client-side).
-      const cmsEntries = auditRes.items
+      const cmsEntries = (auditRes?.items ?? [])
         .filter((e) => e.action.startsWith(CMS_AUDIT_ACTION_PREFIX))
         .slice(0, 5);
       setHistory(cmsEntries);
@@ -84,7 +84,7 @@ export default function CmsHubPage() {
         '/audit-log?limit=20',
         token,
       );
-      const cmsEntries = auditRes.items
+      const cmsEntries = (auditRes?.items ?? [])
         .filter((e) => e.action.startsWith(CMS_AUDIT_ACTION_PREFIX))
         .slice(0, 5);
       setHistory(cmsEntries);
