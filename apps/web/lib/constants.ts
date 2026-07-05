@@ -198,21 +198,21 @@ import { CATEGORY_IMAGES, NAV_FEATURED } from './placeholder-images';
 
 export const CATEGORY_CARDS: CategoryCard[] = [
   {
-    label: 'Tops',
-    subtitle: 'The Essential Foundation',
-    href: '/series/tops',
+    label: 'Women',
+    subtitle: 'The Women\'s Collection',
+    href: '/shop/women/womens',
     image: CATEGORY_IMAGES.tops,
   },
   {
-    label: 'Denims',
-    subtitle: 'Signature Craftsmanship',
-    href: '/series/pants/denims',
+    label: 'Men',
+    subtitle: 'The Men\'s Collection',
+    href: '/shop/men/mens',
     image: CATEGORY_IMAGES.denims,
   },
   {
-    label: 'Jackets',
-    subtitle: 'Structured Outerwear',
-    href: '/series/tops/jackets',
+    label: 'Unisex',
+    subtitle: 'Styles for Everyone',
+    href: '/shop/women/u',
     image: CATEGORY_IMAGES.jackets,
   },
 ];
