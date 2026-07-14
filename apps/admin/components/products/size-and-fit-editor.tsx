@@ -15,8 +15,7 @@ import { SIZE_CHART_DIMENSIONS, type ProductType } from '@/lib/product-taxonomy'
 export interface ChartRow {
   sizeKey: string;
   dimension: string;
-  bodyValueIn: number;
-  garmentValueIn: number;
+  valueIn: number;
 }
 
 interface SizeAndFitEditorProps {
@@ -471,54 +470,52 @@ function Select({
 // PANTS can use numeric waist-size keys (24, 26, 28...) or letter sizes.
 // SHIRTS/JACKETS use a letter-size lookup (XS..XXL); unknown keys fall through.
 
-const PANTS_LETTER_DEFAULTS: Record<string, Partial<Record<string, [number, number]>>> = {
-  XS:  { waist: [24, 25], hip: [33, 35], inseam: [30, 30], thigh: [21, 23], 'front rise': [10, 10], 'back rise': [13, 13], 'hem opening': [20, 20], 'waistband height': [2, 2] },
-  S:   { waist: [26, 27], hip: [35, 37], inseam: [30, 30], thigh: [22, 24], 'front rise': [10, 10], 'back rise': [13, 13], 'hem opening': [21, 21], 'waistband height': [2, 2] },
-  M:   { waist: [28, 29], hip: [37, 39], inseam: [32, 32], thigh: [23, 25], 'front rise': [11, 11], 'back rise': [14, 14], 'hem opening': [22, 22], 'waistband height': [2, 2] },
-  L:   { waist: [30, 31], hip: [39, 41], inseam: [32, 32], thigh: [24, 26], 'front rise': [11, 11], 'back rise': [14, 14], 'hem opening': [23, 23], 'waistband height': [2, 2] },
-  XL:  { waist: [32, 33], hip: [41, 43], inseam: [32, 32], thigh: [25, 27], 'front rise': [12, 12], 'back rise': [15, 15], 'hem opening': [24, 24], 'waistband height': [2, 2] },
-  XXL: { waist: [34, 35], hip: [43, 45], inseam: [32, 32], thigh: [26, 28], 'front rise': [12, 12], 'back rise': [15, 15], 'hem opening': [25, 25], 'waistband height': [2, 2] },
+const PANTS_LETTER_DEFAULTS: Record<string, Partial<Record<string, number>>> = {
+  XS:  { waist: 24, hip: 33, thigh: 21, 'front rise': 10, 'back rise': 13, length: 30 },
+  S:   { waist: 26, hip: 35, thigh: 22, 'front rise': 10, 'back rise': 13, length: 30 },
+  M:   { waist: 28, hip: 37, thigh: 23, 'front rise': 11, 'back rise': 14, length: 32 },
+  L:   { waist: 30, hip: 39, thigh: 24, 'front rise': 11, 'back rise': 14, length: 32 },
+  XL:  { waist: 32, hip: 41, thigh: 25, 'front rise': 12, 'back rise': 15, length: 32 },
+  XXL: { waist: 34, hip: 43, thigh: 26, 'front rise': 12, 'back rise': 15, length: 32 },
 };
 
 const SHIRT_LETTER_DEFAULTS: Record<
   string,
-  Partial<Record<string, [number, number]>>
+  Partial<Record<string, number>>
 > = {
-  XS:  { chest: [34, 38], shoulder: [14, 15], length: [24, 25], sleeve: [22, 23], bicep: [12, 14], 'hem opening': [36, 40], 'neck width': [14, 15],   'cuff opening': [8, 9],   'armhole depth': [8, 9] },
-  S:   { chest: [36, 40], shoulder: [15, 16], length: [25, 26], sleeve: [23, 24], bicep: [13, 15], 'hem opening': [38, 42], 'neck width': [14.5, 15.5], 'cuff opening': [8, 9],   'armhole depth': [8.5, 9.5] },
-  M:   { chest: [38, 42], shoulder: [16, 17], length: [26, 27], sleeve: [24, 25], bicep: [14, 16], 'hem opening': [40, 44], 'neck width': [15, 16],   'cuff opening': [9, 10],  'armhole depth': [9, 10] },
-  L:   { chest: [40, 44], shoulder: [17, 18], length: [27, 28], sleeve: [25, 26], bicep: [15, 17], 'hem opening': [42, 46], 'neck width': [15.5, 16.5], 'cuff opening': [9, 10],  'armhole depth': [9.5, 10.5] },
-  XL:  { chest: [42, 46], shoulder: [18, 19], length: [28, 29], sleeve: [26, 27], bicep: [16, 18], 'hem opening': [44, 48], 'neck width': [16, 17],   'cuff opening': [10, 11], 'armhole depth': [10, 11] },
-  XXL: { chest: [44, 48], shoulder: [19, 20], length: [29, 30], sleeve: [27, 28], bicep: [17, 19], 'hem opening': [46, 50], 'neck width': [16.5, 17.5], 'cuff opening': [10, 11], 'armhole depth': [10.5, 11.5] },
+  XS:  { chest: 34, shoulder: 14, length: 24, sleeve: 22, bicep: 12, 'hem opening': 36, 'neck width': 14,   'cuff opening': 8,   'armhole depth': 8 },
+  S:   { chest: 36, shoulder: 15, length: 25, sleeve: 23, bicep: 13, 'hem opening': 38, 'neck width': 14.5, 'cuff opening': 8,   'armhole depth': 8.5 },
+  M:   { chest: 38, shoulder: 16, length: 26, sleeve: 24, bicep: 14, 'hem opening': 40, 'neck width': 15,   'cuff opening': 9,   'armhole depth': 9 },
+  L:   { chest: 40, shoulder: 17, length: 27, sleeve: 25, bicep: 15, 'hem opening': 42, 'neck width': 15.5, 'cuff opening': 9,   'armhole depth': 9.5 },
+  XL:  { chest: 42, shoulder: 18, length: 28, sleeve: 26, bicep: 16, 'hem opening': 44, 'neck width': 16,   'cuff opening': 10,  'armhole depth': 10 },
+  XXL: { chest: 44, shoulder: 19, length: 29, sleeve: 27, bicep: 17, 'hem opening': 46, 'neck width': 16.5, 'cuff opening': 10,  'armhole depth': 10.5 },
 };
 
 const JACKET_LETTER_DEFAULTS: Record<
   string,
-  Partial<Record<string, [number, number]>>
+  Partial<Record<string, number>>
 > = {
-  XS:  { chest: [36, 41], shoulder: [16, 17], length: [25, 26], sleeve: [23, 24], bicep: [13, 16], 'hem opening': [38, 43], 'cuff opening': [9, 10],  'back length': [25, 26], 'armhole depth': [9, 10] },
-  S:   { chest: [38, 43], shoulder: [17, 18], length: [26, 27], sleeve: [24, 25], bicep: [14, 17], 'hem opening': [40, 45], 'cuff opening': [9, 10],  'back length': [26, 27], 'armhole depth': [9.5, 10.5] },
-  M:   { chest: [40, 45], shoulder: [18, 19], length: [27, 28], sleeve: [25, 26], bicep: [15, 18], 'hem opening': [42, 47], 'cuff opening': [10, 11], 'back length': [27, 28], 'armhole depth': [10, 11] },
-  L:   { chest: [42, 47], shoulder: [19, 20], length: [28, 29], sleeve: [26, 27], bicep: [16, 19], 'hem opening': [44, 49], 'cuff opening': [10, 11], 'back length': [28, 29], 'armhole depth': [10.5, 11.5] },
-  XL:  { chest: [44, 49], shoulder: [20, 21], length: [29, 30], sleeve: [27, 28], bicep: [17, 20], 'hem opening': [46, 51], 'cuff opening': [11, 12], 'back length': [29, 30], 'armhole depth': [11, 12] },
-  XXL: { chest: [46, 51], shoulder: [21, 22], length: [30, 31], sleeve: [28, 29], bicep: [18, 21], 'hem opening': [48, 53], 'cuff opening': [11, 12], 'back length': [30, 31], 'armhole depth': [11.5, 12.5] },
+  XS:  { chest: 36, shoulder: 16, length: 25, sleeve: 23, bicep: 13, 'hem opening': 38, 'cuff opening': 9,  'back length': 25, 'armhole depth': 9 },
+  S:   { chest: 38, shoulder: 17, length: 26, sleeve: 24, bicep: 14, 'hem opening': 40, 'cuff opening': 9,  'back length': 26, 'armhole depth': 9.5 },
+  M:   { chest: 40, shoulder: 18, length: 27, sleeve: 25, bicep: 15, 'hem opening': 42, 'cuff opening': 10, 'back length': 27, 'armhole depth': 10 },
+  L:   { chest: 42, shoulder: 19, length: 28, sleeve: 26, bicep: 16, 'hem opening': 44, 'cuff opening': 10, 'back length': 28, 'armhole depth': 10.5 },
+  XL:  { chest: 44, shoulder: 20, length: 29, sleeve: 27, bicep: 17, 'hem opening': 46, 'cuff opening': 11, 'back length': 29, 'armhole depth': 11 },
+  XXL: { chest: 46, shoulder: 21, length: 30, sleeve: 28, bicep: 18, 'hem opening': 48, 'cuff opening': 11, 'back length': 30, 'armhole depth': 11.5 },
 };
 
 function pantsDefaultRow(
   size: string,
   dim: string,
-): [number, number] | null {
+): number | null {
   const N = Number(size);
   if (Number.isNaN(N)) return null;
   switch (dim) {
-    case 'waist':            return [N, N + 1];
-    case 'hip':              return [N + 9, N + 11];
-    case 'inseam':           return [32, 32];
-    case 'thigh':            return [Math.floor(N / 2) + 9, Math.floor(N / 2) + 11];
-    case 'front rise':       return [11, 11];
-    case 'back rise':        return [14, 14];
-    case 'hem opening':      return [22, 22];
-    case 'waistband height': return [2, 2];
+    case 'waist':            return N;
+    case 'hip':              return N + 10;
+    case 'length':           return 32;
+    case 'thigh':            return Math.floor(N / 2) + 10;
+    case 'front rise':       return 11;
+    case 'back rise':        return 14;
     default:                 return null;
   }
 }
@@ -534,9 +531,9 @@ export function buildDefaultSizeChart(
       // First try numeric size (24, 26, 28...)
       let found = false;
       for (const dim of dims) {
-        const pair = pantsDefaultRow(sizeKey, dim);
-        if (!pair) continue;
-        rows.push({ sizeKey, dimension: dim, bodyValueIn: pair[0], garmentValueIn: pair[1] });
+        const val = pantsDefaultRow(sizeKey, dim);
+        if (val === null) continue;
+        rows.push({ sizeKey, dimension: dim, valueIn: val });
         found = true;
       }
       // If not numeric, try letter size (XS, S, M, L, XL, XXL)
@@ -545,9 +542,9 @@ export function buildDefaultSizeChart(
         const entry = table[sizeKey.toUpperCase()];
         if (entry) {
           for (const dim of dims) {
-            const pair = entry[dim];
-            if (!pair) continue;
-            rows.push({ sizeKey, dimension: dim, bodyValueIn: pair[0], garmentValueIn: pair[1] });
+            const val = entry[dim];
+            if (val === undefined) continue;
+            rows.push({ sizeKey, dimension: dim, valueIn: val });
           }
         }
       }
@@ -556,9 +553,9 @@ export function buildDefaultSizeChart(
       const entry = table[sizeKey.toUpperCase()];
       if (!entry) continue;
       for (const dim of dims) {
-        const pair = entry[dim];
-        if (!pair) continue;
-        rows.push({ sizeKey, dimension: dim, bodyValueIn: pair[0], garmentValueIn: pair[1] });
+        const val = entry[dim];
+        if (val === undefined) continue;
+        rows.push({ sizeKey, dimension: dim, valueIn: val });
       }
     }
   }
@@ -604,26 +601,17 @@ function SizeChartBlock({
   }
   const dims = SIZE_CHART_DIMENSIONS[type];
 
-  const getValue = (
-    sizeKey: string,
-    dim: string,
-    key: 'bodyValueIn' | 'garmentValueIn',
-  ): string => {
+  const getValue = (sizeKey: string, dim: string): string => {
     const found = value.find(
       (r) => r.sizeKey === sizeKey && r.dimension === dim,
     );
     if (!found) return '';
-    const v = found[key];
+    const v = found.valueIn;
     if (v === 0) return '';
     return unit === 'cm' ? (v * 2.54).toFixed(1) : String(v);
   };
 
-  const setValueAt = (
-    sizeKey: string,
-    dim: string,
-    key: 'bodyValueIn' | 'garmentValueIn',
-    raw: string,
-  ) => {
+  const setValueAt = (sizeKey: string, dim: string, raw: string) => {
     if (raw.trim() === '') {
       const existing = value.find(
         (r) => r.sizeKey === sizeKey && r.dimension === dim,
@@ -632,42 +620,20 @@ function SizeChartBlock({
       const without = value.filter(
         (r) => !(r.sizeKey === sizeKey && r.dimension === dim),
       );
-      const other =
-        key === 'bodyValueIn' ? existing.garmentValueIn : existing.bodyValueIn;
-      if (other === 0) {
-        onChange(without);
-        return;
-      }
-      onChange([
-        ...without,
-        {
-          sizeKey,
-          dimension: dim,
-          bodyValueIn: key === 'bodyValueIn' ? 0 : existing.bodyValueIn,
-          garmentValueIn:
-            key === 'garmentValueIn' ? 0 : existing.garmentValueIn,
-        },
-      ]);
+      onChange(without);
       return;
     }
     let inches = Number(raw);
     if (Number.isNaN(inches)) return;
     if (unit === 'cm') inches = inches / 2.54;
     inches = Math.round(inches * 2) / 2;
-    const existing = value.find(
-      (r) => r.sizeKey === sizeKey && r.dimension === dim,
-    );
     const without = value.filter(
       (r) => !(r.sizeKey === sizeKey && r.dimension === dim),
     );
-    const next: ChartRow = {
-      sizeKey,
-      dimension: dim,
-      bodyValueIn: existing?.bodyValueIn ?? 0,
-      garmentValueIn: existing?.garmentValueIn ?? 0,
-    };
-    next[key] = inches;
-    onChange([...without, next]);
+    onChange([
+      ...without,
+      { sizeKey, dimension: dim, valueIn: inches },
+    ]);
   };
 
   return (
@@ -713,65 +679,31 @@ function SizeChartBlock({
               {dims.map((d) => (
                 <th
                   key={d}
-                  colSpan={2}
                   className="border-b border-outline-variant/20 px-3 py-2 text-center text-[10px] uppercase tracking-[0.2em] text-secondary"
                 >
                   {d}
                 </th>
               ))}
             </tr>
-            <tr className="bg-surface-container-low/30">
-              <th className="px-3 py-1" aria-hidden />
-              {dims.flatMap((d) => [
-                <th
-                  key={`${d}-body`}
-                  className="px-2 py-1 text-center text-[9px] uppercase text-secondary"
-                >
-                  Body
-                </th>,
-                <th
-                  key={`${d}-garment`}
-                  className="px-2 py-1 text-center text-[9px] uppercase text-secondary"
-                >
-                  Garment
-                </th>,
-              ])}
-            </tr>
           </thead>
           <tbody>
             {variantSizes.map((s) => (
               <tr key={s} className="border-t border-outline-variant/10">
                 <td className="px-3 py-2 font-mono text-sm">{s}</td>
-                {dims.flatMap((d) => [
-                  <td key={`${s}-${d}-body`} className="px-2 py-1">
+                {dims.map((d) => (
+                  <td key={`${s}-${d}`} className="px-2 py-1">
                     <input
                       type="number"
                       step="0.5"
                       min="0"
-                      value={getValue(s, d, 'bodyValueIn')}
-                      onChange={(e) =>
-                        setValueAt(s, d, 'bodyValueIn', e.target.value)
-                      }
+                      value={getValue(s, d)}
+                      onChange={(e) => setValueAt(s, d, e.target.value)}
                       placeholder="—"
-                      aria-label={`${d} body for size ${s}`}
+                      aria-label={`${d} for size ${s}`}
                       className="w-16 border-0 border-b border-outline-variant/25 bg-transparent py-1 text-center text-sm focus:border-primary focus:outline-none focus:ring-0"
                     />
-                  </td>,
-                  <td key={`${s}-${d}-garment`} className="px-2 py-1">
-                    <input
-                      type="number"
-                      step="0.5"
-                      min="0"
-                      value={getValue(s, d, 'garmentValueIn')}
-                      onChange={(e) =>
-                        setValueAt(s, d, 'garmentValueIn', e.target.value)
-                      }
-                      placeholder="—"
-                      aria-label={`${d} garment for size ${s}`}
-                      className="w-16 border-0 border-b border-outline-variant/25 bg-transparent py-1 text-center text-sm focus:border-primary focus:outline-none focus:ring-0"
-                    />
-                  </td>,
-                ])}
+                  </td>
+                ))}
               </tr>
             ))}
           </tbody>

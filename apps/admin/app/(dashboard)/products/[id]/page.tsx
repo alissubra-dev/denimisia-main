@@ -60,8 +60,7 @@ interface Product {
   sizeCharts?: Array<{
     sizeKey: string;
     dimension: string;
-    bodyValueIn: number;
-    garmentValueIn: number;
+    valueIn: number;
   }>;
 }
 
@@ -160,8 +159,7 @@ export default function EditProductPage() {
         (product.sizeCharts ?? []).map((s) => ({
           sizeKey: s.sizeKey,
           dimension: s.dimension,
-          bodyValueIn: s.bodyValueIn,
-          garmentValueIn: s.garmentValueIn,
+          valueIn: s.valueIn,
         })),
       );
       setFitLandmarks(
