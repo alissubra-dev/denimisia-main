@@ -625,8 +625,7 @@ export async function sendBotMessage(
 export interface SizeChartRow {
   sizeKey: string;
   dimension: string;
-  bodyValueIn: number;
-  garmentValueIn: number;
+  valueIn: number;
 }
 
 export async function getProductSizeChart(
