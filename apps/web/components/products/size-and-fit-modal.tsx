@@ -98,9 +98,18 @@ export function SizeAndFitModal({
     () => Array.from(new Set(rows.map((r) => r.sizeKey))),
     [rows],
   );
+  // Filter dimensions to show only key ones for pants
+  const pantsDimensions = ['waist', 'front rise', 'back rise', 'hip', 'thigh', 'length'];
   const dimensions = useMemo(
-    () => Array.from(new Set(rows.map((r) => r.dimension))),
-    [rows],
+    () => {
+      const allDims = Array.from(new Set(rows.map((r) => r.dimension.toLowerCase())));
+      // For pants, filter to show only key dimensions
+      if (productType === 'PANTS') {
+        return pantsDimensions.filter(d => allDims.includes(d));
+      }
+      return allDims;
+    },
+    [rows, productType],
   );
   const display = (v: number | undefined | null) =>
     v == null ? '-' : unit === 'cm' ? (v * 2.54).toFixed(1) : v.toFixed(1);
