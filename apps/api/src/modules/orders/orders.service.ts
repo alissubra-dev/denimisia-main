@@ -323,6 +323,222 @@ export class OrdersService {
     return order;
   }
 
+  /**
+   * Admin-only order creation. Used for phone orders where the admin enters
+   * the order on behalf of a customer. The admin's ID is recorded as createdBy.
+   * This uses the same logic as createOrder but with admin context.
+   */
+  async createOrderByAdmin(dto: CreateOrderDto, adminId: string) {
+    // For admin-created orders, treat as guest checkout initially - the admin
+    // provides customer contact info via dto.guestEmail/guestName/guestPhone
+    // or we could extend DTO to accept a userId for existing customers.
+    // We pass null as userId to trigger the guest flow in createOrder logic.
+    const userId: string | null = null;
+
+    // Validate that customer contact info is provided for admin orders
+    if (!dto.guestEmail && !dto.guestName && !dto.guestPhone) {
+      throw new BadRequestException(
+        'Admin orders require customer contact info: guestEmail, guestName, and guestPhone',
+      );
+    }
+
+    const isGuest = userId === null;
+    if (isGuest) {
+      const { guestEmail, guestName, guestPhone } = dto;
+      if (!guestEmail || !guestName || !guestPhone) {
+        throw new BadRequestException(
+          'Admin order requires guestEmail + guestName + guestPhone',
+        );
+      }
+    }
+
+    this.assertLineKindPerItem(dto.items);
+
+    const variantInputs = dto.items.filter((i) => i.variantId);
+    const bundleInputs = dto.items.filter((i) => i.bundleId);
+
+    const variantLines = await this.resolveVariantLines(variantInputs);
+    const bundleLines = await this.resolveBundleLines(bundleInputs);
+
+    let subtotal = 0;
+    const orderItemsData: Prisma.OrderItemUncheckedCreateWithoutOrderInput[] =
+      [];
+    for (const line of variantLines) {
+      subtotal += line.total;
+      orderItemsData.push(this.buildVariantOrderItemData(line));
+    }
+    for (const line of bundleLines) {
+      subtotal += line.total;
+      orderItemsData.push(this.buildBundleOrderItemData(line));
+    }
+
+    let discountAmount = 0;
+    let discountId: string | undefined;
+    if (dto.discountCode) {
+      ({ discountId, discountAmount } = await this.resolveDiscount(
+        dto.discountCode,
+        subtotal,
+      ));
+    }
+
+    const shippingCost = await this.computeShipping(
+      dto.shippingAddress,
+      dto.discountCode,
+      subtotal - discountAmount,
+    );
+
+    const total = Math.max(0, subtotal - discountAmount + shippingCost);
+    const stockOps = this.collectStockOps(variantLines, bundleLines);
+
+    // Determine effectiveUserId - same logic as createOrder for guest matching
+    const emailLower = dto.guestEmail!.trim().toLowerCase();
+    const phoneResult = normalizeAndValidate(dto.guestPhone!);
+    const normalizedPhone = phoneResult.ok ? phoneResult.phone : '';
+
+    const candidate = await this.prisma.user.findFirst({
+      where: {
+        deletedAt: null,
+        OR: [
+          { email: emailLower },
+          ...(normalizedPhone ? [{ phones: { has: normalizedPhone } }] : []),
+        ],
+      },
+      orderBy: { createdAt: 'asc' },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        phones: true,
+        claimedAt: true,
+      },
+    });
+
+    let effectiveUserId: string;
+    if (candidate) {
+      effectiveUserId = candidate.id;
+      if (candidate.claimedAt === null) {
+        // SHADOW: fill-blanks update
+        const updates: Prisma.UserUpdateInput = {};
+        if (!candidate.firstName && dto.guestName) {
+          updates.firstName = dto.guestName.trim();
+        }
+        if (!candidate.lastName && dto.guestName) {
+          const parts = dto.guestName.trim().split(' ');
+          updates.lastName = parts.length > 1 ? parts.slice(1).join(' ') : '';
+        }
+        if (normalizedPhone && !candidate.phones.includes(normalizedPhone)) {
+          const newPhones = [normalizedPhone, ...candidate.phones];
+          if (
+            newPhones.length !== candidate.phones.length ||
+            newPhones[0] !== candidate.phones[0]
+          ) {
+            updates.phones = newPhones;
+          }
+        }
+        if (Object.keys(updates).length > 0) {
+          await this.prisma.user.update({
+            where: { id: candidate.id },
+            data: updates,
+          });
+        }
+      }
+      this.logger.log(
+        `admin order matched user ${candidate.id} (state=${candidate.claimedAt ? 'claimed' : 'shadow'})`,
+      );
+    } else {
+      // No match: upsert new shadow user
+      const newShadow = await this.prisma.user.upsert({
+        where: { email: emailLower },
+        create: {
+          email: emailLower,
+          firstName: dto.guestName!.trim(),
+          lastName: '',
+          phones: normalizedPhone ? [normalizedPhone] : [],
+          passwordHash: null,
+          role: Role.CUSTOMER,
+          isVerified: true,
+          claimedAt: null,
+          createdBy: adminId, // Record admin as creator
+        },
+        update: { email: emailLower },
+        select: { id: true },
+      });
+      effectiveUserId = newShadow.id;
+    }
+
+    const order = await this.createOrderWithNumberRetry((orderNumber) =>
+      this.prisma.$transaction(async (tx) => {
+        await this.lockAndAssertStock(tx, stockOps);
+
+        const created = await tx.order.create({
+          data: {
+            orderNumber,
+            userId: effectiveUserId,
+            guestEmail: dto.guestEmail ?? null,
+            guestName: dto.guestName ?? null,
+            guestPhone: dto.guestPhone ?? null,
+            shippingAddress: dto.shippingAddress as Prisma.InputJsonValue,
+            billingAddress: dto.billingAddress as
+              | Prisma.InputJsonValue
+              | undefined,
+            subtotal,
+            discount: discountAmount,
+            shippingCost,
+            total,
+            notes: dto.notes,
+            discountId,
+            items: { create: orderItemsData },
+            createdBy: adminId, // Record admin who created this order
+          },
+          include: { items: true },
+        });
+
+        await this.applyStockOps(tx, stockOps, created.id);
+
+        if (discountId) {
+          await this.atomicReserveDiscount(tx, discountId);
+        }
+
+        return created;
+      }),
+    );
+
+    // Record CampaignUsage rows
+    if (effectiveUserId) {
+      const campaignIds = Array.from(
+        new Set(
+          variantLines
+            .map((l) => l.campaignId)
+            .filter((id): id is string => Boolean(id)),
+        ),
+      );
+      if (campaignIds.length > 0) {
+        try {
+          await this.prisma.campaignUsage.createMany({
+            data: campaignIds.map((campaignId) => ({
+              campaignId,
+              orderId: order.id,
+              userId: effectiveUserId,
+            })),
+            skipDuplicates: true,
+          });
+        } catch (err) {
+          this.logger.warn(
+            `campaign usage write failed for admin order ${order.id}: ${err instanceof Error ? err.message : 'unknown'}`,
+          );
+        }
+      }
+    }
+
+    this.eventEmitter.emit(
+      'order.created',
+      new OrderCreatedEvent(order.id, effectiveUserId, total),
+    );
+
+    return order;
+  }
+
   async getMyOrders(userId: string, page = 1, limit = 10) {
     const skip = (page - 1) * limit;
     const [orders, total] = await Promise.all([

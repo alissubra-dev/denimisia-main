@@ -7,6 +7,7 @@ import { useSession } from 'next-auth/react';
 import { adminFetch } from '@/lib/api';
 import { Banner } from '@/components/admin-ui';
 import { ImportOrdersModal } from '@/components/orders/import-orders-modal';
+import { CreateOrderModal } from '@/components/orders/create-order-modal';
 
 const BDT_FORMATTER = new Intl.NumberFormat('en-BD', {
   style: 'currency',
@@ -146,6 +147,7 @@ export default function OrdersPage() {
 
   const [globalStats, setGlobalStats] = useState<GlobalStats | null>(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [createOrderOpen, setCreateOrderOpen] = useState(false);
 
   const limit = 20;
   const totalPages = Math.ceil(total / limit);
@@ -375,6 +377,13 @@ export default function OrdersPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setCreateOrderOpen(true)}
+            className="px-6 py-2 bg-primary text-on-primary text-xs font-semibold uppercase tracking-widest hover:opacity-90 transition-opacity duration-300 ease-editorial"
+          >
+            Create Order
+          </button>
           <button
             type="button"
             onClick={() => setImportOpen(true)}
@@ -626,6 +635,17 @@ export default function OrdersPage() {
         onImported={() => {
           setImportOpen(false);
           void fetchOrders();
+        }}
+        apiBase={process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1'}
+        token={token}
+      />
+      <CreateOrderModal
+        open={createOrderOpen}
+        onClose={() => setCreateOrderOpen(false)}
+        onCreated={() => {
+          setCreateOrderOpen(false);
+          void fetchOrders();
+          void fetchStats();
         }}
         apiBase={process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1'}
         token={token}

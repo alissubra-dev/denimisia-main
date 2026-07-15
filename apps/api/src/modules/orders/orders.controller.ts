@@ -146,6 +146,20 @@ export class OrdersController {
     return this.ordersService.updateOrderStatus(id, dto, user.id);
   }
 
+  // Admin-only endpoint to manually create an order (e.g., from phone orders)
+  @Post('admin')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SUPPORT_STAFF)
+  createOrderByAdmin(
+    @CurrentUser() admin: { id: string },
+    @Body() dto: CreateOrderDto,
+  ) {
+    // Admins create orders on behalf of customers. The dto includes guest
+    // contact info or we can link to an existing user. We pass null as userId
+    // when creating guest orders, or the dto can include a userId field.
+    return this.ordersService.createOrderByAdmin(dto, admin.id);
+  }
+
   @Get(':id/status-history')
   @UseGuards(JwtAuthGuard)
   async getStatusHistory(@CurrentUser() user: any, @Param('id') id: string) {
