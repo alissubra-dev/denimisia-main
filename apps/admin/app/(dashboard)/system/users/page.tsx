@@ -334,7 +334,7 @@ function EditRoleModal({ user, onClose, onSaved }: EditRoleModalProps) {
   const token = session?.accessToken;
   const isSuperAdmin = session?.user?.role === 'SUPER_ADMIN';
 
-  const [role, setRole] = useState<UserRole>('STAFF');
+  const [role, setRole] = useState<UserRole>('MANAGER');
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
   const [confirmEscalation, setConfirmEscalation] = useState(false);
