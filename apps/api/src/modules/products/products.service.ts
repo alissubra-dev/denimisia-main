@@ -62,8 +62,7 @@ const PRODUCT_LIST_INCLUDE = {
     select: {
       sizeKey: true,
       dimension: true,
-      bodyValueIn: true,
-      garmentValueIn: true,
+      valueIn: true,
     },
   },
   _count: { select: { reviews: true } },
@@ -434,8 +433,7 @@ export class ProductsService {
           select: {
             sizeKey: true,
             dimension: true,
-            bodyValueIn: true,
-            garmentValueIn: true,
+            valueIn: true,
           },
         },
       },
@@ -531,8 +529,7 @@ export class ProductsService {
             productId: product.id,
             sizeKey: s.sizeKey,
             dimension: s.dimension,
-            bodyValueIn: s.bodyValueIn,
-            garmentValueIn: s.garmentValueIn,
+            valueIn: s.valueIn,
           })),
         });
       }
@@ -608,8 +605,7 @@ export class ProductsService {
               productId: id,
               sizeKey: s.sizeKey,
               dimension: s.dimension,
-              bodyValueIn: s.bodyValueIn,
-              garmentValueIn: s.garmentValueIn,
+              valueIn: s.valueIn,
             })),
           });
         }
@@ -795,8 +791,7 @@ export class ProductsService {
           select: {
             sizeKey: true,
             dimension: true,
-            bodyValueIn: true,
-            garmentValueIn: true,
+            valueIn: true,
           },
         },
       },

@@ -48,10 +48,7 @@ export class SizeChartEntryDto {
   dimension!: string;
 
   @IsNumber()
-  bodyValueIn!: number;
-
-  @IsNumber()
-  garmentValueIn!: number;
+  valueIn!: number;
 }
 
 // Same cuid shape used by CreateBundleDto. Duplicated here so the inline

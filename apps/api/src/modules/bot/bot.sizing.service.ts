@@ -26,7 +26,7 @@ export interface RecommendResult {
 interface SizeChartRow {
   sizeKey: string;
   dimension: string;
-  bodyValueIn: number;
+  valueIn: number;
 }
 
 interface VariantRow {
@@ -48,7 +48,7 @@ export class BotSizingService {
       where: { type: input.type, isActive: true, deletedAt: null },
       include: {
         sizeCharts: {
-          select: { sizeKey: true, dimension: true, bodyValueIn: true },
+          select: { sizeKey: true, dimension: true, valueIn: true },
         },
         variants: { select: { size: true, stock: true } },
       },
@@ -68,7 +68,7 @@ export class BotSizingService {
       const sizeMap = new Map<string, Map<string, number>>();
       for (const c of p.sizeCharts) {
         if (!sizeMap.has(c.sizeKey)) sizeMap.set(c.sizeKey, new Map());
-        sizeMap.get(c.sizeKey)!.set(c.dimension, c.bodyValueIn);
+        sizeMap.get(c.sizeKey)!.set(c.dimension, c.valueIn);
       }
 
       for (const [sizeKey, dims] of sizeMap) {

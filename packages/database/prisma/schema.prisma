@@ -439,8 +439,7 @@ model ProductSizeChart {
   productId       String
   sizeKey         String   // matches Variant.size, e.g. "30", "M"
   dimension       String   // free-form: "waist" | "hip" | "inseam" | "thigh" | "chest" | "shoulder" | "length" | "sleeve"
-  bodyValueIn     Float
-  garmentValueIn  Float
+  valueIn         Float
   product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([productId, sizeKey, dimension])

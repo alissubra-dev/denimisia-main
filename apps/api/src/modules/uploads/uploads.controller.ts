@@ -89,7 +89,7 @@ export class UploadsController {
   )
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   async directUpload(
-    @UploadedFile() file: Multer.File,
+    @UploadedFile() file: any,
     @Req() req: Request,
   ) {
     const body = req.body as Record<string, string>;
