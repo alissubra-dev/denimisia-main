@@ -18,9 +18,9 @@ import { Modal, ConfirmModal } from '@/components/modal';
 import { Field, Select } from '@/components/form';
 import { InviteAdminModal } from '@/components/staff/invite-admin-modal';
 
-type UserRole = 'CUSTOMER' | 'ADMIN' | 'SUPER_ADMIN' | 'STAFF';
+type UserRole = 'CUSTOMER' | 'ADMIN' | 'SUPER_ADMIN' | 'MANAGER' | 'SUPPORT_STAFF';
 
-const ASSIGNABLE_ROLES: readonly UserRole[] = ['STAFF', 'ADMIN', 'SUPER_ADMIN'];
+const ASSIGNABLE_ROLES: readonly UserRole[] = ['MANAGER', 'SUPPORT_STAFF', 'ADMIN', 'SUPER_ADMIN'];
 
 interface AdminUser {
   readonly id: string;
@@ -40,13 +40,13 @@ interface UsersResponse {
   readonly limit: number;
 }
 
-const STAFF_ROLES: readonly UserRole[] = ['ADMIN', 'SUPER_ADMIN', 'STAFF'];
+const STAFF_ROLES: readonly UserRole[] = ['ADMIN', 'SUPER_ADMIN', 'MANAGER', 'SUPPORT_STAFF'];
 const PAGE_SIZE = 25;
 
 function roleTone(role: UserRole): 'danger' | 'warning' | 'info' | 'neutral' {
   if (role === 'SUPER_ADMIN') return 'danger';
   if (role === 'ADMIN') return 'warning';
-  if (role === 'STAFF') return 'info';
+  if (role === 'MANAGER' || role === 'SUPPORT_STAFF') return 'info';
   return 'neutral';
 }
 
