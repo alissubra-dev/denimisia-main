@@ -102,8 +102,8 @@ export function SizeAndFitModal({
     () => Array.from(new Set(rows.map((r) => r.dimension))),
     [rows],
   );
-  const display = (v: number) =>
-    unit === 'cm' ? (v * 2.54).toFixed(1) : v.toFixed(1);
+  const display = (v: number | undefined | null) =>
+    v == null ? '-' : unit === 'cm' ? (v * 2.54).toFixed(1) : v.toFixed(1);
 
   function helpMePick() {
     setChatOpen(true);
