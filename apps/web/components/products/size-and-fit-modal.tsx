@@ -221,54 +221,42 @@ export function SizeAndFitModal({
                 <table className="w-full border border-border text-sm">
                   <thead>
                     <tr className="border-b border-border bg-muted-bg/50">
-                      <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.1em] text-ink">
+                      <th className="px-2 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.1em] text-ink">
                         Size
                       </th>
-                      {dimensions.flatMap((d) => [
+                      {sizes.map((s) => (
                         <th
-                          key={`${d}-body`}
-                          className="px-3 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.1em] text-ink"
+                          key={s}
+                          className="px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.1em] text-ink"
                         >
-                          {d} (body)
-                        </th>,
-                        <th
-                          key={`${d}-garment`}
-                          className="px-3 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.1em] text-ink"
-                        >
-                          {d} (garment)
-                        </th>,
-                      ])}
+                          {s}
+                        </th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {sizes.map((s, i) => (
+                    {dimensions.map((d, i) => (
                       <tr
-                        key={s}
+                        key={d}
                         className={cn(
-                          i !== sizes.length - 1 && 'border-b border-border/60',
+                          i !== dimensions.length - 1 && 'border-b border-border/60',
                         )}
                       >
-                        <td className="px-3 py-2 text-left text-sm font-semibold text-ink">
-                          {s}
+                        <td className="px-2 py-2 text-left text-sm font-medium text-ink capitalize">
+                          {d}
                         </td>
-                        {dimensions.flatMap((d) => {
+                        {sizes.map((s) => {
                           const row = rows.find(
-                            (r) => r.sizeKey === s && r.dimension === d,
+                            (r) => r.sizeKey === s && r.dimension.toLowerCase() === d.toLowerCase(),
                           );
-                          return [
+                          return (
                             <td
-                              key={`${s}-${d}-b`}
-                              className="px-3 py-2 text-center text-sm text-muted"
+                              key={`${s}-${d}`}
+                              className="px-2 py-2 text-center text-sm text-muted"
                             >
-                              {row ? display(row.bodyValueIn) : '—'}
-                            </td>,
-                            <td
-                              key={`${s}-${d}-g`}
-                              className="px-3 py-2 text-center text-sm text-muted"
-                            >
-                              {row ? display(row.garmentValueIn) : '—'}
-                            </td>,
-                          ];
+                              {row ? display(row.valueIn) : '—'}
+                            </td>
+                          );
                         })}
                       </tr>
                     ))}
