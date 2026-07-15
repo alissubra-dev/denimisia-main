@@ -104,6 +104,7 @@ export function CreateOrderModal({
 
   const handleAddItem = useCallback(() => {
     if (!selectedProductId || !selectedVariantId || quantity < 1) return;
+    if (!selectedProduct) return;
     const variant = variants.find((v) => v.id === selectedVariantId);
     if (!variant) return;
 
