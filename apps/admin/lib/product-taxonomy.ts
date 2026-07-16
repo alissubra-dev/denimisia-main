@@ -152,3 +152,7 @@ export const SIZE_CHART_DIMENSIONS: Record<ProductType, readonly string[]> = {
   SHIRTS: ['chest', 'shoulder', 'length', 'sleeve', 'bicep', 'hem opening', 'neck width', 'cuff opening', 'armhole depth'],
   JACKETS: ['chest', 'shoulder', 'length', 'sleeve', 'bicep', 'hem opening', 'cuff opening', 'back length', 'armhole depth'],
 };
+
+// Backward-compatible exports for existing code
+export const PRODUCT_TYPES = ['PANTS', 'SHIRTS', 'JACKETS'] as const;
+export const TYPE_ATTRIBUTES = TYPE_ATTRIBUTES_DEFAULT;
