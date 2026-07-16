@@ -45,6 +45,11 @@ const BDT_FORMATTER = new Intl.NumberFormat('en-BD', {
   maximumFractionDigits: 0,
 });
 
+const SHIPPING_RATES = {
+  insideDhaka: 70,
+  outsideDhaka: 130,
+} as const;
+
 export function CreateOrderModal({
   open,
   onClose,
@@ -56,6 +61,7 @@ export function CreateOrderModal({
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [shippingAddress, setShippingAddress] = useState('');
+  const [shippingLocation, setShippingLocation] = useState<'insideDhaka' | 'outsideDhaka'>('insideDhaka');
   const [notes, setNotes] = useState('');
   const [items, setItems] = useState<OrderItem[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -89,6 +95,7 @@ export function CreateOrderModal({
       setCustomerEmail('');
       setCustomerPhone('');
       setShippingAddress('');
+      setShippingLocation('insideDhaka');
       setNotes('');
       setItems([]);
       setSelectedProductId('');
@@ -131,7 +138,7 @@ export function CreateOrderModal({
   }, []);
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const shippingCost = 0; // Could be calculated based on address
+  const shippingCost = items.length > 0 ? SHIPPING_RATES[shippingLocation] : 0;
   const total = subtotal + shippingCost;
 
   const handleSubmit = async () => {
@@ -161,14 +168,16 @@ export function CreateOrderModal({
         })),
         shippingAddress: {
           address: shippingAddress,
+          location: shippingLocation,
         },
+        shippingCost: shippingCost,
         guestName: customerName,
         guestEmail: customerEmail,
         guestPhone: customerPhone,
         notes: notes || undefined,
       };
 
-      await adminPost(`${apiBase}/orders/admin`, orderData, token);
+      await adminPost(`/orders/admin`, orderData, token);
       onCreated();
       onClose();
     } catch (e) {
@@ -411,13 +420,33 @@ export function CreateOrderModal({
             <h3 className="text-xs font-bold uppercase tracking-widest text-secondary mb-4">
               Shipping Address
             </h3>
-            <textarea
-              value={shippingAddress}
-              onChange={(e) => setShippingAddress(e.target.value)}
-              className="w-full px-4 py-3 bg-surface-container-high border border-outline-variant/20 rounded-sm text-sm text-on-surface placeholder:text-secondary/50 focus:outline-none focus:border-primary"
-              rows={3}
-              placeholder="Enter complete shipping address"
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-2">
+                  Location
+                </label>
+                <select
+                  value={shippingLocation}
+                  onChange={(e) => setShippingLocation(e.target.value as 'insideDhaka' | 'outsideDhaka')}
+                  className="w-full px-4 py-3 bg-surface-container-high border border-outline-variant/20 rounded-sm text-sm text-on-surface focus:outline-none focus:border-primary"
+                >
+                  <option value="insideDhaka">Inside Dhaka - 70 BDT</option>
+                  <option value="outsideDhaka">Outside Dhaka - 130 BDT</option>
+                </select>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-2">
+                  Address
+                </label>
+                <textarea
+                  value={shippingAddress}
+                  onChange={(e) => setShippingAddress(e.target.value)}
+                  className="w-full px-4 py-3 bg-surface-container-high border border-outline-variant/20 rounded-sm text-sm text-on-surface placeholder:text-secondary/50 focus:outline-none focus:border-primary"
+                  rows={3}
+                  placeholder="Enter complete shipping address"
+                />
+              </div>
+            </div>
           </div>
 
           {/* Notes */}

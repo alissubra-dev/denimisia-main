@@ -7,8 +7,10 @@ import {
   ValidateNested,
   IsObject,
   IsEmail,
+  IsNumber,
   MinLength,
   MaxLength,
+  Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -52,6 +54,11 @@ export class CreateOrderDto {
   @IsObject()
   @IsOptional()
   billingAddress?: Record<string, unknown>;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  shippingCost?: number;
 
   @IsString()
   @IsOptional()

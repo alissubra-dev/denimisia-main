@@ -141,11 +141,14 @@ export class OrdersService {
       ));
     }
 
-    const shippingCost = await this.computeShipping(
-      dto.shippingAddress,
-      dto.discountCode,
-      subtotal - discountAmount,
-    );
+    // Use provided shippingCost for admin orders, otherwise compute automatically
+    const shippingCost = dto.shippingCost !== undefined
+      ? dto.shippingCost
+      : await this.computeShipping(
+          dto.shippingAddress,
+          dto.discountCode,
+          subtotal - discountAmount,
+        );
 
     const total = Math.max(0, subtotal - discountAmount + shippingCost);
     const stockOps = this.collectStockOps(variantLines, bundleLines);
@@ -381,11 +384,14 @@ export class OrdersService {
       ));
     }
 
-    const shippingCost = await this.computeShipping(
-      dto.shippingAddress,
-      dto.discountCode,
-      subtotal - discountAmount,
-    );
+    // Use provided shippingCost for admin orders, otherwise compute automatically
+    const shippingCost = dto.shippingCost !== undefined
+      ? dto.shippingCost
+      : await this.computeShipping(
+          dto.shippingAddress,
+          dto.discountCode,
+          subtotal - discountAmount,
+        );
 
     const total = Math.max(0, subtotal - discountAmount + shippingCost);
     const stockOps = this.collectStockOps(variantLines, bundleLines);
