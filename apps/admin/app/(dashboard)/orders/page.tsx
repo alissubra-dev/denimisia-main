@@ -108,6 +108,10 @@ interface Order {
   guestPhone?: string;
   items?: { quantity: number }[];
   customer?: { name?: string; email?: string };
+  createdByUser?: {
+    firstName?: string;
+    lastName?: string;
+  };
   total: number;
   status: OrderStatus;
   createdAt: string;
@@ -495,6 +499,9 @@ export default function OrdersPage() {
                   Status
                 </th>
                 <th className="px-6 py-5 text-[10px] font-bold uppercase tracking-[0.2em] text-secondary border-b border-outline-variant/10">
+                  Created By
+                </th>
+                <th className="px-6 py-5 text-[10px] font-bold uppercase tracking-[0.2em] text-secondary border-b border-outline-variant/10">
                   Placed
                 </th>
                 <th className="px-6 py-5 text-[10px] font-bold uppercase tracking-[0.2em] text-secondary border-b border-outline-variant/10 text-right">
@@ -506,7 +513,7 @@ export default function OrdersPage() {
               {loading ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="px-6 py-12 text-center text-xs font-semibold uppercase tracking-widest text-secondary"
                   >
                     Loading orders...
@@ -515,7 +522,7 @@ export default function OrdersPage() {
               ) : orders.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="px-6 py-12 text-center text-xs font-semibold uppercase tracking-widest text-secondary"
                   >
                     No orders found.
@@ -556,6 +563,14 @@ export default function OrdersPage() {
                         >
                           {cfg.label}
                         </span>
+                      </td>
+                      <td className="px-6 py-5 text-sm text-secondary">
+                        {order.createdByUser
+                          ? [order.createdByUser.firstName, order.createdByUser.lastName].filter(Boolean).join(' ') || 'Admin'
+                          : order.userId
+                            ? [order.user?.firstName, order.user?.lastName].filter(Boolean).join(' ') || order.user?.email
+                            : 'Guest'
+                        }
                       </td>
                       <td className="px-6 py-5 text-xs text-secondary font-medium">
                         {formatDate(order.createdAt)}

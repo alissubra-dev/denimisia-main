@@ -494,6 +494,7 @@ export class OrdersService {
             notes: dto.notes,
             discountId,
             items: { create: orderItemsData },
+            createdBy: adminId,
           },
           include: { items: true },
         });
@@ -678,6 +679,13 @@ export class OrdersService {
               firstName: true,
               lastName: true,
               phones: true,
+            },
+          },
+          createdByUser: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
             },
           },
           items: { select: { quantity: true, total: true } },
