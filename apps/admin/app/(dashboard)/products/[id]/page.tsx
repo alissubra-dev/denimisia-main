@@ -216,7 +216,8 @@ export default function EditProductPage() {
         missingDims.push(dim);
       }
     }
-    for (const [dim, spec] of Object.entries(TYPE_ATTRIBUTES[type])) {
+    const typeAttrs = type ? TYPE_ATTRIBUTES[type] : {};
+    for (const [dim, spec] of Object.entries(typeAttrs)) {
       if (spec.required && !productTags.some((t) => t.dimension === dim)) {
         missingDims.push(dim);
       }
