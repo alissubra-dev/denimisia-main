@@ -217,7 +217,7 @@ export default function EditProductPage() {
       }
     }
     const typeAttrs = type && type in TYPE_ATTRIBUTES ? TYPE_ATTRIBUTES[type as keyof typeof TYPE_ATTRIBUTES] : {};
-    for (const [dim, spec] of Object.entries(typeAttrs) as [string, { required?: boolean }[]) {
+    for (const [dim, spec] of Object.entries(typeAttrs) as [string, { required?: boolean }][]) {
       if (spec.required && !productTags.some((t) => t.dimension === dim)) {
         missingDims.push(dim);
       }
