@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { BestsellersCollection } from '@/components/bestsellers/bestsellers-collection';
 import { resolveProductImage, resolveHoverImage } from '@/lib/placeholder-images';
-import { fallbackProducts } from '@/lib/placeholder-products';
 import { buildMetadata } from '@/lib/seo/metadata';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
@@ -12,15 +11,13 @@ interface ApiProduct {
   slug: string;
   price: string;
   images: string[];
+  isFeatured: boolean;
   variants: { id: string; size: string; color: string; price: string; stock: number }[];
 }
 
-interface CollectionResponse {
-  id: string;
-  name: string;
-  slug: string;
-  description: string | null;
-  products: { product: ApiProduct }[];
+interface ProductsResponse {
+  products: ApiProduct[];
+  total: number;
 }
 
 export const revalidate = 60;
@@ -32,58 +29,61 @@ export const metadata: Metadata = buildMetadata({
   pathname: '/collections/bestsellers',
 });
 
-async function getCollection(): Promise<CollectionResponse | null> {
+async function getProducts(): Promise<ApiProduct[]> {
   try {
-    const res = await fetch(`${API}/collections/bestsellers`, { next: { revalidate: 60 } });
-    if (!res.ok) return null;
-    const json = await res.json();
-    return json.success ? json.data : null;
+    // First try to get featured products (these are the bestsellers)
+    const res = await fetch(`${API}/products/featured?limit=20`, { next: { revalidate: 60 } });
+    if (res.ok) {
+      const json = await res.json();
+      if (json.success && json.data?.length > 0) {
+        return json.data;
+      }
+    }
+
+    // Fallback: get products with isTrending=true
+    const trendingRes = await fetch(`${API}/products/trending?limit=20`, { next: { revalidate: 60 } });
+    if (trendingRes.ok) {
+      const json = await trendingRes.json();
+      if (json.success && json.data?.length > 0) {
+        return json.data;
+      }
+    }
+
+    // Final fallback: get recent products
+    const recentRes = await fetch(`${API}/products?limit=20`, { next: { revalidate: 60 } });
+    if (recentRes.ok) {
+      const json = await recentRes.json();
+      if (json.success) {
+        return json.data.products || [];
+      }
+    }
+
+    return [];
   } catch {
-    return null;
+    return [];
   }
 }
 
 export default async function BestsellersCollectionPage() {
-  const api = await getCollection();
-  const apiProducts = api?.products.map((cp) => cp.product) ?? [];
-  const usingPlaceholders = apiProducts.length === 0;
+  const productsData = await getProducts();
 
-  const products = usingPlaceholders
-    ? fallbackProducts({
-        key: 'collection-bestsellers',
-        title: 'Bestsellers',
-        categorySlug: 'bestsellers',
-        adjectives: 'generic',
-        fit: 'bestsellers',
-        count: 12,
-      }).map((p) => {
-        const colors = new Set(p.variants.map((v) => v.color));
-        return {
-          name: p.name,
-          slug: p.slug,
-          price: Number(p.price),
-          image: p.images[0] ?? '',
-          hoverImage: p.images[1],
-          colourCount: colors.size,
-        };
-      })
-    : apiProducts.map((p) => {
-        const colors = new Set(p.variants.map((v) => v.color));
-        return {
-          id: p.id,
-          name: p.name,
-          slug: p.slug,
-          price: Number(p.price),
-          image: resolveProductImage(p.images[0], p.slug),
-          hoverImage: resolveHoverImage(p.images[1], p.slug),
-          colourCount: colors.size,
-        };
-      });
+  const products = productsData.map((p) => {
+    const colors = new Set(p.variants.map((v) => v.color));
+    return {
+      id: p.id,
+      name: p.name,
+      slug: p.slug,
+      price: Number(p.price),
+      image: resolveProductImage(p.images[0], p.slug),
+      hoverImage: resolveHoverImage(p.images[1], p.slug),
+      colourCount: colors.size,
+    };
+  });
 
   return (
     <BestsellersCollection
       products={products}
-      isPlaceholder={usingPlaceholders}
+      isPlaceholder={products.length === 0}
     />
   );
 }
