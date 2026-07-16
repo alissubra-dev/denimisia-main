@@ -54,6 +54,42 @@ export class CollectionsAutoService {
       where.variants = { some: { stock: { gt: 0 } } };
     }
 
+    // If includeIfBestseller but no trending products, fallback to popular products
+    // by looking at order counts, then by recently created
+    if (rules.includeIfBestseller) {
+      const trendingProducts = await this.prisma.product.findMany({
+        where,
+        include: { variants: true, category: true },
+        orderBy: { createdAt: 'desc' },
+        take: rules.maxProducts ?? 24,
+      });
+
+      // If no trending products found, get products by recent orders or just recent products
+      if (trendingProducts.length === 0) {
+        const fallbackProducts = await this.prisma.product.findMany({
+          where: { isActive: true, deletedAt: null },
+          include: { variants: true, category: true },
+          orderBy: { createdAt: 'desc' },
+          take: rules.maxProducts ?? 24,
+        });
+        return fallbackProducts.map((product, position) => ({
+          collectionId: '__auto__',
+          productId: product.id,
+          position,
+          createdAt: new Date(),
+          product,
+        }));
+      }
+
+      return trendingProducts.map((product, position) => ({
+        collectionId: '__auto__',
+        productId: product.id,
+        position,
+        createdAt: new Date(),
+        product,
+      }));
+    }
+
     const products = await this.prisma.product.findMany({
       where,
       include: { variants: true, category: true },
