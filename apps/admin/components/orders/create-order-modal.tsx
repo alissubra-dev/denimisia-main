@@ -116,6 +116,8 @@ export function CreateOrderModal({
     if (!variant) return;
 
     const variantName = [variant.size, variant.color].filter(Boolean).join(' - ');
+    // Use variant price if set, otherwise fall back to product's base price
+    const price = variant.price ?? selectedProduct.price;
 
     setItems((prev) => [
       ...prev,
@@ -123,7 +125,7 @@ export function CreateOrderModal({
         productId: selectedProductId,
         variantId: selectedVariantId,
         quantity,
-        price: variant.price,
+        price,
         productName: selectedProduct.name,
         variantName: variantName || variant.sku,
       },
