@@ -64,7 +64,7 @@ export const UNIVERSAL_ATTRIBUTES = {
 
 export function getUniversalAttributeOptions(dimension: string): string[] {
   const custom = loadCustomTaxonomy();
-  const defaultOptions = (UNIVERSAL_ATTRIBUTES as Record<string, { options: string[] }>)[dimension]?.options || [];
+  const defaultOptions = (UNIVERSAL_ATTRIBUTES as Record<string, { options: readonly string[] }>)[dimension]?.options || [];
   const customOptions = custom.customAttributes[dimension] || [];
   return [...defaultOptions, ...customOptions];
 }
@@ -73,7 +73,7 @@ export function getTypeAttributeOptions(type: string, dimension: string): string
   const custom = loadCustomTaxonomy();
   const key = `${type}_${dimension}`;
   const customOptions = custom.customAttributes[key] || [];
-  const defaultOptions = (TYPE_ATTRIBUTES_DEFAULT as Record<string, Record<string, { options: string[] }>>)[type]?.[dimension]?.options || [];
+  const defaultOptions = (TYPE_ATTRIBUTES_DEFAULT as Record<string, Record<string, { options: readonly string[] }>>)[type]?.[dimension]?.options || [];
   return [...defaultOptions, ...customOptions];
 }
 
