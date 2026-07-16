@@ -153,6 +153,18 @@ export class ProductsController {
     return this.productsService.updateVariant(id, variantId, dto);
   }
 
+  // Bulk update images for all variants of a specific color
+  @Patch(':id/variants-by-color/:color')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SUPPORT_STAFF)
+  updateVariantsByColor(
+    @Param('id') id: string,
+    @Param('color') color: string,
+    @Body() dto: { images: string[] },
+  ) {
+    return this.productsService.updateVariantsByColor(id, color, dto.images);
+  }
+
   @Delete(':id/variants/:variantId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SUPPORT_STAFF)

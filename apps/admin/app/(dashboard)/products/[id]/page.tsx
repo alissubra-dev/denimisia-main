@@ -426,20 +426,17 @@ export default function EditProductPage() {
     setSavingImages(true);
     try {
       const color = imageEditVariant.color ?? '';
-      // Images are per-colour: update every variant sharing this colour so the
-      // API's match-check passes and the storefront colour gallery stays in sync.
-      const targets = variants.filter((v) => (v.color ?? '') === color);
-      const updated: Variant[] = [];
-      for (const v of targets) {
-        const r = await adminFetch<Variant>(
-          `/products/${productId}/variants/${v.id}`,
-          token,
-          { method: 'PATCH', body: JSON.stringify({ images: imageEditUrls }) },
-        );
-        updated.push(r);
-      }
+      // Use bulk endpoint to update all variants of this color at once
+      await adminFetch<Variant[]>(
+        `/products/${productId}/variants-by-color/${encodeURIComponent(color)}`,
+        token,
+        { method: 'PATCH', body: JSON.stringify({ images: imageEditUrls }) },
+      );
+      // Update local state with new images for all variants of this color
       setVariants((prev) =>
-        prev.map((v) => updated.find((u) => u.id === v.id) ?? v),
+        prev.map((v) =>
+          (v.color ?? '') === color ? { ...v, images: imageEditUrls } : v,
+        ),
       );
       setImageEditVariant(null);
       setImageEditUrls([]);

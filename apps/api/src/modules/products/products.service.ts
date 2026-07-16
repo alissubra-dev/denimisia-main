@@ -709,6 +709,44 @@ export class ProductsService {
   }
 
   /**
+   * Bulk update images for all variants of a specific color.
+   * Bypasses the color-image consistency check by updating all at once.
+   */
+  async updateVariantsByColor(
+    productId: string,
+    color: string,
+    images: string[],
+  ) {
+    // Find all variants of this product with the matching color
+    const variants = await this.prisma.productVariant.findMany({
+      where: {
+        productId,
+        color,
+        deletedAt: null,
+      },
+    });
+
+    if (variants.length === 0) {
+      throw new NotFoundException(
+        `No variants found for color "${color}" on this product`,
+      );
+    }
+
+    // Update all variants with the new images in a transaction
+    await this.prisma.$transaction(
+      variants.map((variant) =>
+        this.prisma.productVariant.update({
+          where: { id: variant.id },
+          data: { images },
+        }),
+      ),
+    );
+
+    await this.invalidateByProductId(productId);
+    return variants;
+  }
+
+  /**
    * Enforce LR-001 D1: every ProductVariant of the same (productId, color)
    * shares the same `images` array. The admin UI presents image input PER
    * color, but admins editing variants via the API directly could break
