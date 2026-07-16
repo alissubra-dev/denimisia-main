@@ -96,6 +96,7 @@ const FILTER_OPTIONS: { value: StatusFilter; label: string }[] = [
 interface Order {
   id: string;
   orderNumber?: string;
+  userId?: string | null;
   user?: {
     name?: string;
     email?: string;
@@ -567,8 +568,8 @@ export default function OrdersPage() {
                       <td className="px-6 py-5 text-sm text-secondary">
                         {order.createdByUser
                           ? [order.createdByUser.firstName, order.createdByUser.lastName].filter(Boolean).join(' ') || 'Admin'
-                          : order.userId
-                            ? [order.user?.firstName, order.user?.lastName].filter(Boolean).join(' ') || order.user?.email
+                          : order.user
+                            ? [order.user.firstName, order.user.lastName].filter(Boolean).join(' ') || order.user.email
                             : 'Guest'
                         }
                       </td>
