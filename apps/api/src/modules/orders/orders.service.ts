@@ -465,7 +465,6 @@ export class OrdersService {
           role: Role.CUSTOMER,
           isVerified: true,
           claimedAt: null,
-          createdBy: adminId, // Record admin as creator
         },
         update: { email: emailLower },
         select: { id: true },
@@ -495,7 +494,6 @@ export class OrdersService {
             notes: dto.notes,
             discountId,
             items: { create: orderItemsData },
-            createdBy: adminId, // Record admin who created this order
           },
           include: { items: true },
         });
