@@ -1024,6 +1024,43 @@ export default function NewProductPage() {
           </div>
         </div>
       </form>
+
+      {/* Add Type Modal */}
+      {showAddTypeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowAddTypeModal(false)} />
+          <div className="relative z-10 bg-surface-container-lowest p-6 rounded-sm shadow-xl max-w-sm w-full mx-4">
+            <h3 className="text-sm font-bold uppercase tracking-widest text-on-surface mb-4">
+              Add New Product Type
+            </h3>
+            <input
+              type="text"
+              value={newTypeName}
+              onChange={(e) => setNewTypeName(e.target.value)}
+              placeholder="Enter type name (e.g., SHORTS)"
+              className="w-full px-4 py-3 bg-surface-container-high border border-outline-variant/20 rounded-sm text-sm text-on-surface placeholder:text-secondary/50 focus:outline-none focus:border-primary mb-4"
+              autoFocus
+              onKeyDown={(e) => e.key === 'Enter' && handleAddType()}
+            />
+            <div className="flex gap-3 justify-end">
+              <button
+                type="button"
+                onClick={() => setShowAddTypeModal(false)}
+                className="px-4 py-2 text-xs font-semibold uppercase tracking-widest text-secondary hover:text-on-surface"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleAddType}
+                className="px-4 py-2 bg-primary text-on-primary text-xs font-semibold uppercase tracking-widest hover:opacity-90"
+              >
+                Add
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
