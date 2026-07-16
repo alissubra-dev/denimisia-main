@@ -594,7 +594,7 @@ function SizeChartBlock({
         </p>
         <p className="text-[11px] text-secondary">
           Dimensions for {type}:{' '}
-          {SIZE_CHART_DIMENSIONS[type].join(', ')}
+          {(SIZE_CHART_DIMENSIONS[type] ?? []).join(', ')}
         </p>
       </div>
     );
