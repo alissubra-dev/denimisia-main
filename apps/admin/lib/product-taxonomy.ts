@@ -1,5 +1,34 @@
-export const PRODUCT_TYPES = ['PANTS', 'SHIRTS', 'JACKETS'] as const;
-export type ProductType = (typeof PRODUCT_TYPES)[number];
+// Custom types and attributes stored in localStorage
+const STORAGE_KEY = 'denimisia_custom_taxonomy';
+
+interface CustomTaxonomy {
+  customTypes: string[];
+  customAttributes: Record<string, string[]>;
+}
+
+function loadCustomTaxonomy(): CustomTaxonomy {
+  if (typeof window === 'undefined') {
+    return { customTypes: [], customAttributes: {} };
+  }
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? JSON.parse(stored) : { customTypes: [], customAttributes: {} };
+  } catch {
+    return { customTypes: [], customAttributes: {} };
+  }
+}
+
+export function saveCustomTaxonomy(data: CustomTaxonomy): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+export function getProductTypes(): readonly string[] {
+  const custom = loadCustomTaxonomy();
+  return ['PANTS', 'SHIRTS', 'JACKETS', ...custom.customTypes] as const;
+}
+
+export type ProductType = ReturnType<typeof getProductTypes>[number];
 
 export const UNIVERSAL_ATTRIBUTES = {
   season: {
@@ -33,10 +62,22 @@ export const UNIVERSAL_ATTRIBUTES = {
   },
 } as const;
 
-export const TYPE_ATTRIBUTES: Record<
-  ProductType,
-  Record<string, { required: boolean; multi: boolean; options: readonly string[] }>
-> = {
+export function getUniversalAttributeOptions(dimension: string): string[] {
+  const custom = loadCustomTaxonomy();
+  const defaultOptions = (UNIVERSAL_ATTRIBUTES as Record<string, { options: string[] }>)[dimension]?.options || [];
+  const customOptions = custom.customAttributes[dimension] || [];
+  return [...defaultOptions, ...customOptions];
+}
+
+export function getTypeAttributeOptions(type: string, dimension: string): string[] {
+  const custom = loadCustomTaxonomy();
+  const key = `${type}_${dimension}`;
+  const customOptions = custom.customAttributes[key] || [];
+  const defaultOptions = (TYPE_ATTRIBUTES_DEFAULT as Record<string, Record<string, { options: string[] }>>)[type]?.[dimension]?.options || [];
+  return [...defaultOptions, ...customOptions];
+}
+
+export const TYPE_ATTRIBUTES_DEFAULT = {
   PANTS: {
     silhouette: {
       required: true,

@@ -24,8 +24,8 @@ import {
 } from '@/components/products/size-and-fit-editor';
 import type { FitLandmarks } from '@repo/fit-engine';
 import {
-  PRODUCT_TYPES,
-  TYPE_ATTRIBUTES,
+  getProductTypes,
+  TYPE_ATTRIBUTES_DEFAULT,
   UNIVERSAL_ATTRIBUTES,
   type ProductType,
 } from '@/lib/product-taxonomy';
@@ -84,6 +84,9 @@ export default function NewProductPage() {
   const [productTags, setProductTags] = useState<TagPair[]>([]);
   const [sizeCharts, setSizeCharts] = useState<ChartRow[]>([]);
   const [fitLandmarks, setFitLandmarks] = useState<FitLandmarks | null>(null);
+  const [productTypes, setProductTypes] = useState<readonly string[]>(getProductTypes());
+  const [showAddTypeModal, setShowAddTypeModal] = useState(false);
+  const [newTypeName, setNewTypeName] = useState('');
 
   // Bundle composer: when enabled, the form also creates a ProductBundle on
   // submit, containing this product + the picked products.
@@ -172,6 +175,22 @@ export default function NewProductPage() {
     }
   }, [name, slugEdited]);
 
+  // Handle adding new product type
+  const handleAddType = () => {
+    if (!newTypeName.trim()) return;
+
+    const customData = JSON.parse(localStorage.getItem('denimisia_custom_taxonomy') || '{"customTypes":[], "customAttributes":{}}');
+
+    if (!customData.customTypes.includes(newTypeName.trim().toUpperCase())) {
+      customData.customTypes.push(newTypeName.trim().toUpperCase());
+      localStorage.setItem('denimisia_custom_taxonomy', JSON.stringify(customData));
+      setProductTypes([...productTypes, newTypeName.trim().toUpperCase()]);
+    }
+
+    setNewTypeName('');
+    setShowAddTypeModal(false);
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!token) return;
@@ -194,7 +213,7 @@ export default function NewProductPage() {
         missingDims.push(dim);
       }
     }
-    for (const [dim, spec] of Object.entries(TYPE_ATTRIBUTES[type])) {
+    for (const [dim, spec] of Object.entries(TYPE_ATTRIBUTES_DEFAULT[type])) {
       if (spec.required && !productTags.some((t) => t.dimension === dim)) {
         missingDims.push(dim);
       }
@@ -458,23 +477,33 @@ export default function NewProductPage() {
                 <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-secondary mb-2">
                   Type <span className="text-primary">*</span>
                 </span>
-                <select
-                  value={type ?? ''}
-                  onChange={(e) =>
-                    setType((e.target.value || null) as ProductType | null)
-                  }
-                  required
-                  className="w-full border-0 border-b border-outline-variant/25 bg-transparent py-2 text-sm text-on-surface focus:border-primary focus:outline-none focus:ring-0"
-                >
-                  <option value="" disabled>
-                    Select type
-                  </option>
-                  {PRODUCT_TYPES.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
+                <div className="flex items-center gap-2">
+                  <select
+                    value={type ?? ''}
+                    onChange={(e) =>
+                      setType((e.target.value || null) as ProductType | null)
+                    }
+                    required
+                    className="flex-1 border-0 border-b border-outline-variant/25 bg-transparent py-2 text-sm text-on-surface focus:border-primary focus:outline-none focus:ring-0"
+                  >
+                    <option value="" disabled>
+                      Select type
                     </option>
-                  ))}
-                </select>
+                    {productTypes.map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddTypeModal(true)}
+                    className="px-3 py-2 text-xs font-semibold uppercase tracking-widest text-secondary hover:text-primary transition-colors"
+                    title="Add new type"
+                  >
+                    + Add type
+                  </button>
+                </div>
               </label>
 
               <TypeAttributeFields
