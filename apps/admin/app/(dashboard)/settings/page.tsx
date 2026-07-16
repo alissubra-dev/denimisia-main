@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import { adminFetch } from '@/lib/api';
 import { Modal, ConfirmModal } from '@/components/modal';
 import { IconButton } from '@/components/admin-ui';
+import { TaxonomyManager } from '@/components/products/taxonomy-manager';
 
 interface StoreInfo {
   storeName: string;
@@ -534,6 +535,17 @@ export default function SettingsPage() {
               );
             })}
           </div>
+        </section>
+
+        {/* TAXONOMY MANAGEMENT */}
+        <section className="rounded-sm border border-outline-variant/10 bg-surface-container-lowest p-10 lg:col-span-12">
+          <div className="mb-8 flex items-center gap-4">
+            <span className="material-symbols-outlined text-primary">category</span>
+            <h3 className="font-headline text-sm font-semibold uppercase tracking-[0.15em] text-on-surface">
+              Product Types & Attributes
+            </h3>
+          </div>
+          <TaxonomyManager />
         </section>
       </div>
 
