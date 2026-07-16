@@ -178,43 +178,51 @@ export default function DashboardPage() {
         label: 'Total Orders',
         value: o ? formatNumber(o.total) : '—',
         icon: 'shopping_cart',
+        href: '/orders',
       },
       {
         label: 'Total Completed Orders',
         value: o ? formatNumber(o.completed) : '—',
         icon: 'check_circle',
+        href: '/orders?status=DELIVERED',
       },
       {
         label: 'Total Processing Orders',
         value: o ? formatNumber(o.processing) : '—',
         icon: 'hourglass_empty',
+        href: '/orders?status=PROCESSING',
       },
       {
         label: 'Total Other Orders',
         value: o ? formatNumber(o.other + o.cancelled + o.refunded) : '—',
         icon: 'more_horiz',
+        href: '/orders?status=CANCELLED',
       },
       {
         label: 'Total Sales',
         value: s ? formatCurrency(s.total) : '—',
         icon: 'payments',
         valuePrefix: 'BDT ',
+        href: '/accounting',
       },
       {
         label: 'Average Order Sales',
         value: s ? formatCurrency(s.average) : '—',
         icon: 'receipt_long',
         valuePrefix: 'BDT ',
+        href: '/accounting',
       },
       {
         label: 'Total Customers',
         value: c ? formatNumber(c.total) : '—',
         icon: 'groups',
+        href: '/customers',
       },
       {
         label: 'People Online',
         value: c ? String(c.online) : '—',
         icon: 'wifi_tethering',
+        href: '/customers',
       },
     ];
   }, [overview]);
@@ -301,6 +309,7 @@ export default function DashboardPage() {
                 value={m.value}
                 icon={m.icon}
                 valuePrefix={m.valuePrefix}
+                href={m.href}
               />
             ))}
       </section>

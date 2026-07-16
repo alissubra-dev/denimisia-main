@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 interface MetricCardProps {
   readonly label: string;
   readonly value: string;
@@ -5,6 +7,7 @@ interface MetricCardProps {
   readonly valuePrefix?: string;
   readonly trend?: string;
   readonly trendPositive?: boolean;
+  readonly href?: string;
 }
 
 export function MetricCard({
@@ -14,8 +17,9 @@ export function MetricCard({
   valuePrefix,
   trend,
   trendPositive,
+  href,
 }: MetricCardProps) {
-  return (
+  const content = (
     <div className="atelier-shadow group relative overflow-hidden bg-surface-container-lowest p-6 transition-colors duration-300 ease-editorial hover:bg-surface-container">
       <div className="flex items-start justify-between">
         <div className="min-w-0 flex-1">
@@ -53,4 +57,14 @@ export function MetricCard({
       </div>
     </div>
   );
+
+  if (href) {
+    return (
+      <Link href={href} className="block">
+        {content}
+      </Link>
+    );
+  }
+
+  return content;
 }
