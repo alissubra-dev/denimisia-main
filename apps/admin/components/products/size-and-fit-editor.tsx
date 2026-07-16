@@ -524,7 +524,7 @@ export function buildDefaultSizeChart(
   type: ProductType,
   variantSizes: string[],
 ): ChartRow[] {
-  const dims = SIZE_CHART_DIMENSIONS[type];
+  const dims = SIZE_CHART_DIMENSIONS[type] ?? [];
   const rows: ChartRow[] = [];
   for (const sizeKey of variantSizes) {
     if (type === 'PANTS') {
@@ -599,7 +599,7 @@ function SizeChartBlock({
       </div>
     );
   }
-  const dims = SIZE_CHART_DIMENSIONS[type];
+  const dims = SIZE_CHART_DIMENSIONS[type] ?? [];
 
   const getValue = (sizeKey: string, dim: string): string => {
     const found = value.find(
