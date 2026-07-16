@@ -73,9 +73,10 @@ export function TypeAttributeFields({ type, selected, onChange }: Props) {
     );
   }
 
+  const typeSpecificAttrs = type && type in TYPE_ATTRIBUTES_DEFAULT ? TYPE_ATTRIBUTES_DEFAULT[type as keyof typeof TYPE_ATTRIBUTES_DEFAULT] : {};
   const allDims: Record<string, AttributeSpec> = {
     ...(UNIVERSAL_ATTRIBUTES as unknown as Record<string, AttributeSpec>),
-    ...TYPE_ATTRIBUTES_DEFAULT[type],
+    ...typeSpecificAttrs,
   };
 
   const isSelected = (dimension: string, value: string) =>
