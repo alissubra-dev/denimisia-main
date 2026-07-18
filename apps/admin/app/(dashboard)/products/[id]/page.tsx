@@ -8,6 +8,11 @@ import { Banner } from '@/components/admin-ui';
 import { ConfirmModal } from '@/components/modal';
 import { ImageUploader } from '@/components/image-uploader';
 import { PlacementToggle } from '@/components/placement-toggle';
+import {
+  VariantsBuilder,
+  buildVariantsFromBuilder,
+  type VariantsBuilderValue,
+} from '@/components/variants-builder';
 import { RichTextEditor } from '@/components/rich-text-editor';
 import {
   TypeAttributeFields,
@@ -81,6 +86,37 @@ function formatBdt(value: number): string {
   return value.toLocaleString('en-BD');
 }
 
+/** Convert API variants to VariantsBuilder format */
+function convertVariantsToBuilder(variants: Variant[]): VariantsBuilderValue {
+  const colorMap = new Map<string, { id: string; name: string; hex?: string; images: string[]; sizes: { id: string; label: string; stock: number }[] }>();
+
+  for (const v of variants) {
+    const colorName = (v.color || '').trim();
+    if (!colorName) continue;
+
+    if (!colorMap.has(colorName)) {
+      colorMap.set(colorName, {
+        id: `color-${crypto.randomUUID()}`,
+        name: colorName,
+        hex: v.colorHex || undefined,
+        images: v.images || [],
+        sizes: [],
+      });
+    }
+
+    const color = colorMap.get(colorName)!;
+    if (v.size?.trim()) {
+      color.sizes.push({
+        id: `size-${crypto.randomUUID()}`,
+        label: v.size.trim(),
+        stock: v.stock,
+      });
+    }
+  }
+
+  return { colors: Array.from(colorMap.values()) };
+}
+
 export default function EditProductPage() {
   const router = useRouter();
   const params = useParams();
@@ -119,16 +155,7 @@ export default function EditProductPage() {
 
   // Variant state
   const [variants, setVariants] = useState<Variant[]>([]);
-  const [newVariant, setNewVariant] = useState({
-    size: '',
-    color: '',
-    colorHex: '',
-    stock: '',
-    price: '',
-    sku: '',
-    images: [] as string[],
-  });
-  const [addingVariant, setAddingVariant] = useState(false);
+  const [variantsBuilder, setVariantsBuilder] = useState<VariantsBuilderValue>({ colors: [] });
   // Per-colour image editing for existing variants. Saving applies the image
   // set to every variant of the same colour (the API enforces they match).
   const [imageEditVariant, setImageEditVariant] = useState<Variant | null>(null);
@@ -157,7 +184,11 @@ export default function EditProductPage() {
       setIsNewArrival(product.isNewArrival ?? false);
       setShowStarBadge(product.showStarBadge ?? false);
       setImages(product.images ?? []);
-      setVariants(product.variants ?? []);
+      // Convert API variants to builder format
+      const loadedVariants = product.variants ?? [];
+      setVariants(loadedVariants);
+      const builderColors = convertVariantsToBuilder(loadedVariants);
+      setVariantsBuilder(builderColors);
       setType((product.type ?? null) as ProductType | null);
       setProductTags(
         (product.productTags ?? []).map((t) => ({
@@ -295,164 +326,12 @@ export default function EditProductPage() {
     }
   };
 
-  const handleAddVariant = async () => {
-    if (!token) return;
-    setAddingVariant(true);
-    try {
-      // Size field accepts a single size OR a comma-separated list like
-      // "M, L, XL". Each entry becomes its own variant on the API, all
-      // sharing the same color + hex + stock. SKU gets per-size suffixed
-      // so the API's unique-SKU check doesn't reject the batch on the
-      // second size.
-      const sizeList = newVariant.size
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean);
-      const sizes = sizeList.length > 0 ? sizeList : [''];
-      const stock = Number(newVariant.stock) || 0;
-      // Zero-stock guard. Empty/invalid stock input silently coerces to 0;
-      // confirm before saving so admin doesn't accidentally publish an
-      // unbuyable variant (the 2026-05-24 phantom-zero pattern).
-      if (stock === 0) {
-        const proceed = window.confirm(
-          `This variant will be saved with stock = 0.\n\n` +
-            `Customers can't buy a variant at 0 stock until you restock it.\n\n` +
-            `Save anyway?`,
-        );
-        if (!proceed) {
-          setAddingVariant(false);
-          return;
-        }
-      }
-      const price = newVariant.price ? Number(newVariant.price) : undefined;
-      const baseSku = newVariant.sku.trim();
-
-      // If adding a variant for a color that already exists, use the existing
-      // variant's images to satisfy the API's image consistency requirement.
-      const newColor = (newVariant.color || '').trim();
-
-      // If adding a variant for a color that already exists, use the existing
-      // variant's images to satisfy the API's image consistency requirement.
-      // Find ANY existing variant with matching color that has images.
-      let images: string[] | undefined = newVariant.images.length > 0 ? newVariant.images : undefined;
-      if (newColor && (!images || images.length === 0)) {
-        const existingWithColor = variants.find((v) => {
-          const existingColor = (v.color || '').trim();
-          return existingColor.toLowerCase() === newColor.toLowerCase() &&
-                 v.images &&
-                 v.images.length > 0;
-        });
-        if (existingWithColor?.images && existingWithColor.images.length > 0) {
-          images = existingWithColor.images;
-        }
-      }
-
-      const bodies = sizes.map((sizeValue) => {
-        const sku = baseSku
-          ? sizes.length > 1
-            ? `${baseSku}-${sizeValue.replace(/[^A-Za-z0-9]/g, '')}`
-            : baseSku
-          : undefined;
-        return {
-          size: sizeValue || undefined,
-          color: newVariant.color || undefined,
-          colorHex: newVariant.colorHex.trim() || undefined,
-          stock,
-          price,
-          sku,
-          images,
-        };
-      });
-      // Optimistic: show the rows immediately with temp ids so it feels
-      // instant on the slow API. Reconcile temps -> real rows after the POSTs;
-      // keep the form on failure so the input isn't lost.
-      const tempRows: Variant[] = bodies.map((b) => ({
-        id: `temp-${crypto.randomUUID()}`,
-        size: b.size,
-        color: b.color,
-        colorHex: b.colorHex ?? null,
-        stock: b.stock,
-        price: b.price,
-        sku: b.sku,
-        images: b.images ?? [],
-      }));
-      const tempIds = new Set(tempRows.map((t) => t.id));
-      setVariants((prev) => [...prev, ...tempRows]);
-
-      const created: Variant[] = [];
-      let errMsg = '';
-      for (const body of bodies) {
-        try {
-          const v = await adminFetch<Variant>(
-            `/products/${productId}/variants`,
-            token,
-            { method: 'POST', body: JSON.stringify(body) },
-          );
-          created.push(v);
-        } catch (err: unknown) {
-          errMsg = err instanceof Error ? err.message : 'Failed to add variant';
-          break;
-        }
-      }
-      // Swap the temp rows for whatever the server actually created.
-      setVariants((prev) => [
-        ...prev.filter((v) => !tempIds.has(v.id)),
-        ...created,
-      ]);
-      if (errMsg) {
-        alert(errMsg);
-      } else {
-        setNewVariant({
-          size: '',
-          color: '',
-          colorHex: '',
-          stock: '',
-          price: '',
-          sku: '',
-          images: [],
-        });
-      }
-    } finally {
-      setAddingVariant(false);
-    }
-  };
-
-  const [confirmVariantDeleteId, setConfirmVariantDeleteId] = useState<
-    string | null
-  >(null);
+  // Variants are now managed via VariantsBuilder component below
+  const [confirmVariantDeleteId, setConfirmVariantDeleteId] = useState<string | null>(null);
   const [deletingVariant, setDeletingVariant] = useState(false);
 
   const handleDeleteVariant = async () => {
-    if (!token || !confirmVariantDeleteId) return;
-    const variantId = confirmVariantDeleteId;
-    // Optimistic: remove the row and close the dialog immediately so it feels
-    // instant even when the API is slow. Previously we awaited the DELETE
-    // before removing the row, so on the slow free-plan API the row lingered
-    // for seconds and looked like the delete had failed. Restore on error.
-    const removed = variants.find((v) => v.id === variantId);
-    const removedIndex = variants.findIndex((v) => v.id === variantId);
-    setVariants((prev) => prev.filter((v) => v.id !== variantId));
-    setConfirmVariantDeleteId(null);
-    setDeletingVariant(true);
-    try {
-      await adminFetch(`/products/${productId}/variants/${variantId}`, token, {
-        method: 'DELETE',
-      });
-    } catch (err: unknown) {
-      // Put the row back where it was if the server rejected the delete.
-      if (removed) {
-        setVariants((prev) => {
-          const next = [...prev];
-          next.splice(Math.max(0, removedIndex), 0, removed);
-          return next;
-        });
-      }
-      setError(
-        err instanceof Error ? err.message : 'Failed to delete variant',
-      );
-    } finally {
-      setDeletingVariant(false);
-    }
+    // Variant deletion is now handled via the VariantsBuilder component
   };
 
   const handleSaveVariantImages = async () => {
@@ -1001,146 +880,16 @@ export default function EditProductPage() {
           </div>
         )}
 
-        {/* Add variant form */}
-        <div className="bg-surface-container-low/50 p-6">
-          <div className="mb-5 flex items-center justify-between">
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-secondary">
-              Add Variant
-            </p>
-            <span
-              className="material-symbols-outlined text-secondary"
-              aria-hidden
-            >
-              add_circle
-            </span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-5">
-            <label className="block">
-              <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-secondary mb-2">
-                Size
-              </span>
-              <input
-                type="text"
-                value={newVariant.size}
-                onChange={(e) =>
-                  setNewVariant((prev) => ({ ...prev, size: e.target.value }))
-                }
-                placeholder="M, L, XL"
-                className="w-full border-0 border-b border-outline-variant/25 bg-transparent py-2 text-sm text-on-surface placeholder:text-secondary focus:border-primary focus:outline-none focus:ring-0"
-              />
-            </label>
-            <label className="block">
-              <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-secondary mb-2">
-                Color
-              </span>
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={newVariant.color}
-                  onChange={(e) =>
-                    setNewVariant((prev) => ({ ...prev, color: e.target.value }))
-                  }
-                  placeholder="Indigo"
-                  className="flex-1 border-0 border-b border-outline-variant/25 bg-transparent py-2 text-sm text-on-surface placeholder:text-secondary focus:border-primary focus:outline-none focus:ring-0"
-                />
-                <input
-                  type="color"
-                  value={newVariant.colorHex || '#cccccc'}
-                  onChange={(e) =>
-                    setNewVariant((prev) => ({
-                      ...prev,
-                      colorHex: e.target.value,
-                    }))
-                  }
-                  className="h-7 w-7 cursor-pointer rounded-full border border-outline-variant/30 bg-transparent p-0"
-                  aria-label="Pick hex color for swatch"
-                  title="Hex shown as the solid PDP swatch when set"
-                />
-              </div>
-            </label>
-            <label className="block">
-              <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-secondary mb-2">
-                Stock
-              </span>
-              <input
-                type="number"
-                value={newVariant.stock}
-                onChange={(e) =>
-                  setNewVariant((prev) => ({ ...prev, stock: e.target.value }))
-                }
-                min="0"
-                placeholder="0"
-                className="w-full border-0 border-b border-outline-variant/25 bg-transparent py-2 text-sm text-on-surface placeholder:text-secondary focus:border-primary focus:outline-none focus:ring-0"
-              />
-            </label>
-            <label className="block">
-              <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-secondary mb-2">
-                Price
-              </span>
-              <div className="flex items-center gap-2 border-b border-outline-variant/25 focus-within:border-primary transition-colors duration-300 ease-editorial">
-                <span className="text-sm text-secondary">BDT </span>
-                <input
-                  type="number"
-                  value={newVariant.price}
-                  onChange={(e) =>
-                    setNewVariant((prev) => ({
-                      ...prev,
-                      price: e.target.value,
-                    }))
-                  }
-                  min="0"
-                  placeholder="Override"
-                  className="w-full border-0 bg-transparent py-2 text-sm text-on-surface placeholder:text-secondary focus:outline-none focus:ring-0"
-                />
-              </div>
-            </label>
-            <label className="block">
-              <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-secondary mb-2">
-                SKU
-              </span>
-              <input
-                type="text"
-                value={newVariant.sku}
-                onChange={(e) =>
-                  setNewVariant((prev) => ({ ...prev, sku: e.target.value }))
-                }
-                placeholder="DEN-001"
-                className="w-full border-0 border-b border-outline-variant/25 bg-transparent py-2 text-sm text-on-surface placeholder:text-secondary focus:border-primary focus:outline-none focus:ring-0 font-mono"
-              />
-            </label>
-          </div>
-          <div className="mt-6">
-            <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-secondary mb-2">
-              Variant Images (optional)
-            </span>
-            <ImageUploader
-              value={newVariant.images}
-              onChange={(urls) =>
-                setNewVariant((prev) => ({ ...prev, images: urls }))
-              }
-              token={token}
-              folder="products"
-              maxFiles={8}
-            />
-            <p className="mt-2 text-[10px] tracking-wide text-secondary">
-              Shown on the storefront for this colour. All variants of the same
-              colour must share the same images.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={handleAddVariant}
-            disabled={addingVariant}
-            className="mt-6 inline-flex items-center gap-2 bg-primary px-6 py-2 text-xs font-semibold uppercase tracking-widest text-on-primary transition-opacity duration-300 ease-editorial hover:opacity-90 disabled:opacity-50"
-          >
-            <span
-              className="material-symbols-outlined text-sm"
-              aria-hidden
-            >
-              add
-            </span>
-            {addingVariant ? 'Adding...' : 'Add Variant'}
-          </button>
+        {/* Additional Variants - using VariantsBuilder */}
+        <div className="mt-8">
+          <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-secondary mb-4">
+            Add color
+          </p>
+          <VariantsBuilder
+            value={variantsBuilder}
+            onChange={setVariantsBuilder}
+            token={token}
+          />
         </div>
       </section>
 
