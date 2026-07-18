@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, type FormEvent } from 'react';
 import { useRouter, useParams, notFound } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { adminFetch } from '@/lib/api';
+import { revalidateAllProductPages } from '@/lib/revalidate';
 import { Banner } from '@/components/admin-ui';
 import { ConfirmModal } from '@/components/modal';
 import { ImageUploader } from '@/components/image-uploader';
@@ -303,6 +304,9 @@ export default function EditProductPage() {
         body: JSON.stringify(body),
       });
 
+      // Revalidate storefront cache so changes appear immediately
+      await revalidateAllProductPages(slug || slugify(name));
+
       router.push('/products');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to update product');
@@ -316,6 +320,10 @@ export default function EditProductPage() {
     setDeleting(true);
     try {
       await adminFetch(`/products/${productId}`, token, { method: 'DELETE' });
+
+      // Revalidate storefront cache so deleted product disappears immediately
+      await revalidateAllProductPages(slug);
+
       setConfirmDeleteOpen(false);
       router.push('/products');
     } catch (err: unknown) {
@@ -351,6 +359,10 @@ export default function EditProductPage() {
           (v.color ?? '') === color ? { ...v, images: imageEditUrls } : v,
         ),
       );
+
+      // Revalidate storefront cache so new images appear immediately
+      await revalidateAllProductPages(slug);
+
       setImageEditVariant(null);
       setImageEditUrls([]);
     } catch (err: unknown) {

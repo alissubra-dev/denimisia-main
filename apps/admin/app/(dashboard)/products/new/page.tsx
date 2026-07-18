@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { adminFetch } from '@/lib/api';
+import { revalidateAllProductPages } from '@/lib/revalidate';
 import { Banner } from '@/components/admin-ui';
 import { ImageUploader } from '@/components/image-uploader';
 import { PlacementToggle } from '@/components/placement-toggle';
@@ -329,6 +330,9 @@ export default function NewProductPage() {
         method: 'POST',
         body: JSON.stringify(body),
       });
+
+      // Revalidate storefront cache so new product appears immediately
+      await revalidateAllProductPages(finalSlug);
 
       router.push('/products');
     } catch (err: unknown) {
