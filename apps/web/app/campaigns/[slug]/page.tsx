@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { ProductCard } from '@/components/ui/product-card';
 import { resolveProductImage, resolveHoverImage } from '@/lib/placeholder-images';
 
-export const revalidate = 60;
+export const revalidate = 0;
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
 

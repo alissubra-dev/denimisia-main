@@ -6,7 +6,8 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API}${path}`, {
     ...options,
     headers: { 'Content-Type': 'application/json', ...options?.headers },
-    next: { revalidate: 60 },
+    // Don't cache product data - always fetch fresh from API
+    cache: 'no-store',
     signal: AbortSignal.timeout(3000),
   });
   if (!res.ok) {

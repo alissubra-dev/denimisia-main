@@ -138,7 +138,7 @@ function curatedToCard(item: CuratedItem) {
   };
 }
 
-export const revalidate = 60;
+export const revalidate = 0;
 
 export const metadata: Metadata = buildMetadata({
   title: `${brand.displayName} — ${brand.tagline}`,

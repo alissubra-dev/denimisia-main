@@ -4,86 +4,85 @@
  */
 
 const WEB_ORIGIN = process.env.NEXT_PUBLIC_WEB_ORIGIN || 'https://denimisia.com';
-const REVALIDATION_SECRET = process.env.REVALIDATION_SECRET;
+
+/**
+ * Revalidate a specific path on the storefront
+ */
+async function revalidatePath(path: string): Promise<boolean> {
+  try {
+    const url = new URL(`/api/revalidate?path=${encodeURIComponent(path)}`, WEB_ORIGIN);
+    console.log('[Revalidate] Calling:', url.toString());
+
+    const response = await fetch(url.toString(), {
+      method: 'GET',
+      cache: 'no-store',
+    });
+
+    const result = await response.json();
+    console.log('[Revalidate] Response:', result);
+
+    return response.ok;
+  } catch (err) {
+    console.error('[Revalidate] Failed:', err);
+    return false;
+  }
+}
 
 /**
  * Revalidate a specific product page
  */
 export async function revalidateProduct(slug: string): Promise<void> {
-  try {
-    const url = new URL('/api/revalidate', WEB_ORIGIN);
-    url.searchParams.set('path', `/products/${slug}`);
-    if (REVALIDATION_SECRET) {
-      url.searchParams.set('secret', REVALIDATION_SECRET);
-    }
-    await fetch(url.toString(), { cache: 'no-store' });
-  } catch (err) {
-    console.error('Failed to revalidate product:', err);
-  }
+  await revalidatePath(`/products/${slug}`);
 }
 
 /**
  * Revalidate product listing pages
  */
 export async function revalidateProducts(): Promise<void> {
-  try {
-    const url = new URL('/api/revalidate', WEB_ORIGIN);
-    url.searchParams.set('path', '/shop');
-    url.searchParams.set('path', '/collections');
-    if (REVALIDATION_SECRET) {
-      url.searchParams.set('secret', REVALIDATION_SECRET);
-    }
-    await fetch(url.toString(), { cache: 'no-store' });
-  } catch (err) {
-    console.error('Failed to revalidate products:', err);
-  }
+  await Promise.all([
+    revalidatePath('/shop'),
+    revalidatePath('/collections'),
+  ]);
 }
 
 /**
  * Revalidate collection pages
  */
 export async function revalidateCollections(): Promise<void> {
-  try {
-    const url = new URL('/api/revalidate', WEB_ORIGIN);
-    url.searchParams.set('path', '/collections');
-    if (REVALIDATION_SECRET) {
-      url.searchParams.set('secret', REVALIDATION_SECRET);
-    }
-    await fetch(url.toString(), { cache: 'no-store' });
-  } catch (err) {
-    console.error('Failed to revalidate collections:', err);
-  }
+  await revalidatePath('/collections');
 }
 
 /**
  * Revalidate homepage sections
  */
 export async function revalidateHomepage(): Promise<void> {
-  try {
-    const url = new URL('/api/revalidate', WEB_ORIGIN);
-    url.searchParams.set('path', '/');
-    if (REVALIDATION_SECRET) {
-      url.searchParams.set('secret', REVALIDATION_SECRET);
-    }
-    await fetch(url.toString(), { cache: 'no-store' });
-  } catch (err) {
-    console.error('Failed to revalidate homepage:', err);
-  }
+  await revalidatePath('/');
 }
 
 /**
  * Revalidate all product-related pages after any mutation
  */
 export async function revalidateAllProductPages(slug?: string): Promise<void> {
-  // Revalidate multiple key pages in parallel
-  await Promise.all([
-    revalidateHomepage(),
-    revalidateProducts(),
-    revalidateCollections(),
-    slug ? revalidateProduct(slug) : Promise.resolve(),
-    // Also revalidate special collections that show products
-    fetch(new URL('/api/revalidate?path=/new-arrivals', WEB_ORIGIN), { cache: 'no-store' }).catch(() => {}),
-    fetch(new URL('/api/revalidate?path=/trending', WEB_ORIGIN), { cache: 'no-store' }).catch(() => {}),
-    fetch(new URL('/api/revalidate?path=/collections/bestsellers', WEB_ORIGIN), { cache: 'no-store' }).catch(() => {}),
-  ]);
+  console.log('[Revalidate] Starting revalidation for:', slug || 'all pages');
+
+  // Revalidate multiple key pages
+  const pages = [
+    '/',
+    '/shop',
+    '/collections',
+    '/new-arrivals',
+    '/trending',
+    '/collections/bestsellers',
+  ];
+
+  if (slug) {
+    pages.push(`/products/${slug}`);
+  }
+
+  // Revalidate all pages in parallel but wait for each
+  for (const page of pages) {
+    await revalidatePath(page);
+  }
+
+  console.log('[Revalidate] Completed');
 }

@@ -7,7 +7,7 @@ import { SlotHero } from '@/components/slot/slot-hero';
 import { buildMetadata } from '@/lib/seo/metadata';
 import { getActiveCollections } from '@/lib/collections';
 
-export const revalidate = 60;
+export const revalidate = 0;
 
 export const metadata: Metadata = buildMetadata({
   title: 'Collections',

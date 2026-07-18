@@ -20,7 +20,7 @@ interface ProductsResponse {
   total: number;
 }
 
-export const revalidate = 60;
+export const revalidate = 0;
 
 export const metadata: Metadata = buildMetadata({
   title: 'Bestsellers',
