@@ -923,6 +923,27 @@ export default function EditProductPage() {
             value={variantsBuilder}
             onChange={setVariantsBuilder}
             token={token}
+            existingVariants={variants.map(v => ({ id: v.id, color: v.color || '', size: v.size || '' }))}
+            onDeleteVariant={async (variantId: string) => {
+              if (!token) return;
+              await adminFetch(`/products/${productId}/variants/${variantId}`, token, {
+                method: 'DELETE',
+              });
+              setVariants(prev => prev.filter(v => v.id !== variantId));
+            }}
+            onUpdateVariantImages={async (color: string, images: string[]) => {
+              if (!token) return;
+              await adminFetch<Variant[]>(
+                `/products/${productId}/variants-by-color/${encodeURIComponent(color)}`,
+                token,
+                { method: 'PATCH', body: JSON.stringify({ images }) },
+              );
+              setVariants(prev =>
+                prev.map(v =>
+                  (v.color ?? '') === color ? { ...v, images } : v,
+                ),
+              );
+            }}
           />
         </div>
       </section>
