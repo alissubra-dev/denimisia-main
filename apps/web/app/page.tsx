@@ -44,7 +44,7 @@ async function fetchCollection(slug: string): Promise<ApiProduct[]> {
     // Use /resolved so AUTO collections (bestsellers, new-arrivals) auto-populate
     // from rules. EDIT/DROP/PROMO still return their manual product list.
     const res = await fetch(`${API}/collections/${slug}/resolved`, {
-      next: { revalidate: 60 },
+      cache: 'no-store',
     });
     if (!res.ok) return [];
     const json = await res.json();
@@ -60,7 +60,7 @@ async function fetchCollection(slug: string): Promise<ApiProduct[]> {
 
 async function fetchProducts(limit = 17): Promise<ApiProduct[]> {
   try {
-    const res = await fetch(`${API}/products?limit=${limit}`, { next: { revalidate: 60 } });
+    const res = await fetch(`${API}/products?limit=${limit}`, { cache: 'no-store' });
     if (!res.ok) return [];
     const json = await res.json();
     return json.success ? json.data.products : [];
@@ -74,7 +74,7 @@ async function fetchFlaggedList(
 ): Promise<ApiProduct[]> {
   try {
     const res = await fetch(`${API}/products/${path}`, {
-      next: { revalidate: 60 },
+      cache: 'no-store',
     });
     if (!res.ok) return [];
     const json = await res.json();
