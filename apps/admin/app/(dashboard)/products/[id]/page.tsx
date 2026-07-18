@@ -329,13 +329,20 @@ export default function EditProductPage() {
 
       // If adding a variant for a color that already exists, use the existing
       // variant's images to satisfy the API's image consistency requirement.
-      const newColor = newVariant.color?.trim();
-      let images = newVariant.images.length ? newVariant.images : undefined;
-      if (newColor && !images) {
-        const existingWithColor = variants.find(
-          (v) => v.color?.toLowerCase() === newColor.toLowerCase() && v.images && v.images.length > 0,
-        );
-        if (existingWithColor?.images) {
+      const newColor = (newVariant.color || '').trim();
+
+      // If adding a variant for a color that already exists, use the existing
+      // variant's images to satisfy the API's image consistency requirement.
+      // Find ANY existing variant with matching color that has images.
+      let images: string[] | undefined = newVariant.images.length > 0 ? newVariant.images : undefined;
+      if (newColor && (!images || images.length === 0)) {
+        const existingWithColor = variants.find((v) => {
+          const existingColor = (v.color || '').trim();
+          return existingColor.toLowerCase() === newColor.toLowerCase() &&
+                 v.images &&
+                 v.images.length > 0;
+        });
+        if (existingWithColor?.images && existingWithColor.images.length > 0) {
           images = existingWithColor.images;
         }
       }
