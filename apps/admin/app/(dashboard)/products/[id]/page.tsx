@@ -7,6 +7,7 @@ import { adminFetch } from '@/lib/api';
 import { Banner } from '@/components/admin-ui';
 import { ConfirmModal } from '@/components/modal';
 import { ImageUploader } from '@/components/image-uploader';
+import { PlacementToggle } from '@/components/placement-toggle';
 import { RichTextEditor } from '@/components/rich-text-editor';
 import {
   TypeAttributeFields,
@@ -52,6 +53,9 @@ interface Product {
   category?: Category;
   tags?: string[];
   isFeatured: boolean;
+  isTrending: boolean;
+  isNewArrival: boolean;
+  showStarBadge: boolean;
   images?: string[];
   variants?: Variant[];
   type?: ProductType | null;
@@ -101,6 +105,9 @@ export default function EditProductPage() {
   const [categoryId, setCategoryId] = useState('');
   const [tags, setTags] = useState('');
   const [isFeatured, setIsFeatured] = useState(false);
+  const [isTrending, setIsTrending] = useState(false);
+  const [isNewArrival, setIsNewArrival] = useState(false);
+  const [showStarBadge, setShowStarBadge] = useState(false);
   const [images, setImages] = useState<string[]>([]);
 
   // Product type + attribute tags drive the chatbot's product finder.
@@ -146,6 +153,9 @@ export default function EditProductPage() {
       setCategoryId(product.categoryId ?? product.category?.id ?? '');
       setTags((product.tags ?? []).join(', '));
       setIsFeatured(product.isFeatured);
+      setIsTrending(product.isTrending ?? false);
+      setIsNewArrival(product.isNewArrival ?? false);
+      setShowStarBadge(product.showStarBadge ?? false);
       setImages(product.images ?? []);
       setVariants(product.variants ?? []);
       setType((product.type ?? null) as ProductType | null);
@@ -247,6 +257,9 @@ export default function EditProductPage() {
         ...(categoryId ? { categoryId } : {}),
         tags: tagList,
         isFeatured,
+        isTrending,
+        isNewArrival,
+        showStarBadge,
         images,
         type,
         productTags,
@@ -792,54 +805,32 @@ export default function EditProductPage() {
               </span>
             </header>
 
-            <button
-              type="button"
-              role="switch"
-              aria-checked={isFeatured}
-              onClick={() => setIsFeatured((v) => !v)}
-              className="w-full flex items-start justify-between gap-4 text-left"
-            >
-              <div>
-                <p className="font-headline text-lg font-semibold uppercase tracking-[0.15em]">
-                  Best Sellers
-                </p>
-                <p
-                  className={`mt-2 text-[11px] tracking-wide ${
-                    isFeatured
-                      ? 'text-inverse-on-surface/70'
-                      : 'text-secondary'
-                  }`}
-                >
-                  Toggle on to surface this garment on the Denimisia homepage
-                  &ldquo;Best Sellers&rdquo; tab. The storefront reads this
-                  flag directly.
-                </p>
-                <p
-                  className={`mt-3 text-[10px] font-bold uppercase tracking-[0.2em] ${
-                    isFeatured
-                      ? 'text-inverse-on-surface'
-                      : 'text-secondary'
-                  }`}
-                >
-                  {isFeatured ? 'Featured · Live on Storefront' : 'Not Featured'}
-                </p>
-              </div>
-              <span
-                className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center transition-colors duration-300 ease-editorial ${
-                  isFeatured
-                    ? 'bg-on-primary'
-                    : 'bg-surface-container-high'
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform transition-transform duration-300 ease-editorial ${
-                    isFeatured
-                      ? 'translate-x-6 bg-primary'
-                      : 'translate-x-1 bg-on-surface'
-                  }`}
-                />
-              </span>
-            </button>
+            <div className="space-y-6">
+              <PlacementToggle
+                label="Feature on Storefront"
+                description="Surfaces this piece on the homepage &quot;Best Sellers&quot; tab."
+                checked={isFeatured}
+                onChange={setIsFeatured}
+              />
+              <PlacementToggle
+                label="Trending"
+                description="Adds this piece to the Trending row on the homepage."
+                checked={isTrending}
+                onChange={setIsTrending}
+              />
+              <PlacementToggle
+                label="New Arrival"
+                description="Pins this piece into the New Arrivals section."
+                checked={isNewArrival}
+                onChange={setIsNewArrival}
+              />
+              <PlacementToggle
+                label="Star Badge on Card"
+                description="Renders a ★ badge over this product's card in any list."
+                checked={showStarBadge}
+                onChange={setShowStarBadge}
+              />
+            </div>
           </section>
 
           {/* Submit */}
