@@ -326,7 +326,20 @@ export default function EditProductPage() {
       }
       const price = newVariant.price ? Number(newVariant.price) : undefined;
       const baseSku = newVariant.sku.trim();
-      const images = newVariant.images.length ? newVariant.images : undefined;
+
+      // If adding a variant for a color that already exists, use the existing
+      // variant's images to satisfy the API's image consistency requirement.
+      const newColor = newVariant.color?.trim();
+      let images = newVariant.images.length ? newVariant.images : undefined;
+      if (newColor && !images) {
+        const existingWithColor = variants.find(
+          (v) => v.color?.toLowerCase() === newColor.toLowerCase() && v.images && v.images.length > 0,
+        );
+        if (existingWithColor?.images) {
+          images = existingWithColor.images;
+        }
+      }
+
       const bodies = sizes.map((sizeValue) => {
         const sku = baseSku
           ? sizes.length > 1
