@@ -305,27 +305,69 @@ export default function EditProductPage() {
         variantsBuilder,
       );
 
+      // First, update the product
       await adminFetch(`/products/${productId}`, token, {
         method: 'PATCH',
         body: JSON.stringify(body),
       });
 
-      // Save any new variants from the VariantsBuilder
-      if (newVariants.length > 0 && token) {
-        for (const variant of newVariants) {
-          try {
-            await adminFetch(`/products/${productId}/variants`, token, {
-              method: 'POST',
-              body: JSON.stringify(variant),
-            });
-          } catch (err) {
-            console.error('Failed to save variant:', err);
+      // Now save/update variants - we need to handle this properly:
+      // 1. For colors that existed before, update their stock via PATCH
+      // 2. For completely new colors, create new variants via POST
+
+      const currentSlug = slug || slugify(name);
+
+      // Update existing variants with their new stock values
+      for (const builderColor of variantsBuilder.colors) {
+        if (!builderColor.name) continue;
+
+        // For each size in this color, update or create the variant
+        for (const sizeEntry of builderColor.sizes) {
+          if (!sizeEntry.label) continue;
+
+          // Check if this is an existing variant (has matching color and size)
+          const existingVariant = variants.find(
+            v => (v.color || '').toLowerCase() === builderColor.name.toLowerCase() &&
+                 (v.size || '').toLowerCase() === sizeEntry.label.toLowerCase()
+          );
+
+          if (existingVariant) {
+            // Update stock for existing variant
+            try {
+              await adminFetch(`/products/${productId}/variants/${existingVariant.id}`, token, {
+                method: 'PATCH',
+                body: JSON.stringify({ stock: sizeEntry.stock }),
+              });
+            } catch (err) {
+              console.error('Failed to update variant stock:', err);
+            }
+          } else {
+            // Create new variant
+            const slugCode = currentSlug.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4).padEnd(2, 'X');
+            const colorCode = builderColor.name.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3).padEnd(2, 'X');
+            const sizeCode = sizeEntry.label.replace(/[^A-Za-z0-9]/g, '');
+
+            try {
+              await adminFetch(`/products/${productId}/variants`, token, {
+                method: 'POST',
+                body: JSON.stringify({
+                  sku: `${slugCode}-${colorCode}-${sizeCode}`,
+                  size: sizeEntry.label,
+                  color: builderColor.name,
+                  colorHex: builderColor.hex,
+                  stock: sizeEntry.stock,
+                  images: builderColor.images.length > 0 ? builderColor.images : undefined,
+                }),
+              });
+            } catch (err) {
+              console.error('Failed to create variant:', err);
+            }
           }
         }
       }
 
       // Revalidate storefront cache so changes appear immediately
-      await revalidateAllProductPages(slug || slugify(name));
+      await revalidateAllProductPages(currentSlug);
 
       // Force full page reload to ensure fresh data is loaded
       window.location.href = '/products';
