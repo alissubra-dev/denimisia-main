@@ -781,24 +781,14 @@ export default function EditProductPage() {
 
           {/* Featured toggle — prominent */}
           <section
-            className={`p-8 shadow-[0_20px_40px_rgba(27,28,28,0.03)] transition-colors duration-300 ease-editorial ${
-              isFeatured
-                ? 'bg-inverse-surface text-inverse-on-surface'
-                : 'bg-surface-container-lowest text-on-surface'
-            }`}
+            className="bg-surface-container-lowest p-8 shadow-[0_20px_40px_rgba(27,28,28,0.03)]"
           >
             <header className="mb-6 flex items-center justify-between">
-              <p
-                className={`text-[10px] font-bold uppercase tracking-[0.3em] ${
-                  isFeatured ? 'text-inverse-on-surface/80' : 'text-secondary'
-                }`}
-              >
+              <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-secondary">
                 V · Placement
               </p>
               <span
-                className={`material-symbols-outlined ${
-                  isFeatured ? 'text-inverse-on-surface' : 'text-secondary'
-                }`}
+                className="material-symbols-outlined text-secondary"
                 aria-hidden
               >
                 {isFeatured ? 'star' : 'star_outline'}
