@@ -299,15 +299,36 @@ export default function EditProductPage() {
         fitLandmarks,
       };
 
+      // Save any new variants from the VariantsBuilder
+      const newVariants = buildVariantsFromBuilder(
+        { slug: slug || slugify(name) },
+        variantsBuilder,
+      );
+
       await adminFetch(`/products/${productId}`, token, {
         method: 'PATCH',
         body: JSON.stringify(body),
       });
 
+      // Save any new variants from the VariantsBuilder
+      if (newVariants.length > 0 && token) {
+        for (const variant of newVariants) {
+          try {
+            await adminFetch(`/products/${productId}/variants`, token, {
+              method: 'POST',
+              body: JSON.stringify(variant),
+            });
+          } catch (err) {
+            console.error('Failed to save variant:', err);
+          }
+        }
+      }
+
       // Revalidate storefront cache so changes appear immediately
       await revalidateAllProductPages(slug || slugify(name));
 
-      router.push('/products');
+      // Force full page reload to ensure fresh data is loaded
+      window.location.href = '/products';
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to update product');
     } finally {
@@ -325,7 +346,8 @@ export default function EditProductPage() {
       await revalidateAllProductPages(slug);
 
       setConfirmDeleteOpen(false);
-      router.push('/products');
+      // Force full page reload to ensure fresh data is loaded
+      window.location.href = '/products';
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Delete failed');
       setConfirmDeleteOpen(false);
