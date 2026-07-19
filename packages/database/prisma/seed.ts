@@ -30,36 +30,120 @@ async function main() {
     update: {},
     create: { name: "Women's", slug: 'womens', description: "Women's clothing" },
   });
-  const wideleg = await prisma.category.upsert({
+  // Women's fit categories (matching frontend SHOP_GENDER_FITS)
+  await prisma.category.upsert({
     where: { slug: 'womens-wide-leg' },
     update: {},
     create: { name: 'Wide Leg', slug: 'womens-wide-leg', parentId: womens.id },
   });
-  const baggy = await prisma.category.upsert({
-    where: { slug: 'womens-baggy' },
-    update: {},
-    create: { name: 'Baggy', slug: 'womens-baggy', parentId: womens.id },
-  });
-  const flare = await prisma.category.upsert({
-    where: { slug: 'womens-flare' },
-    update: {},
-    create: { name: 'Flare & Boot Cut', slug: 'womens-flare', parentId: womens.id },
-  });
-  const barrel = await prisma.category.upsert({
-    where: { slug: 'womens-barrel' },
-    update: {},
-    create: { name: 'Barrel Fit', slug: 'womens-barrel', parentId: womens.id },
-  });
-  const cargo = await prisma.category.upsert({
+  await prisma.category.upsert({
     where: { slug: 'womens-cargo' },
     update: {},
     create: { name: 'Cargo', slug: 'womens-cargo', parentId: womens.id },
   });
-  // Men's — placeholder, empty for now
   await prisma.category.upsert({
+    where: { slug: 'womens-culotte' },
+    update: {},
+    create: { name: 'Culotte', slug: 'womens-culotte', parentId: womens.id },
+  });
+  await prisma.category.upsert({
+    where: { slug: 'womens-flare' },
+    update: {},
+    create: { name: 'Flare & Boot Cut', slug: 'womens-flare', parentId: womens.id },
+  });
+  await prisma.category.upsert({
+    where: { slug: 'womens-mom' },
+    update: {},
+    create: { name: 'Mom', slug: 'womens-mom', parentId: womens.id },
+  });
+  await prisma.category.upsert({
+    where: { slug: 'womens-jegging' },
+    update: {},
+    create: { name: 'Jegging', slug: 'womens-jegging', parentId: womens.id },
+  });
+  await prisma.category.upsert({
+    where: { slug: 'womens-slouchy' },
+    update: {},
+    create: { name: 'Slouchy', slug: 'womens-slouchy', parentId: womens.id },
+  });
+  await prisma.category.upsert({
+    where: { slug: 'womens-skinny' },
+    update: {},
+    create: { name: 'Skinny', slug: 'womens-skinny', parentId: womens.id },
+  });
+  await prisma.category.upsert({
+    where: { slug: 'womens-straight' },
+    update: {},
+    create: { name: 'Straight', slug: 'womens-straight', parentId: womens.id },
+  });
+  await prisma.category.upsert({
+    where: { slug: 'womens-sweatshirt' },
+    update: {},
+    create: { name: 'Sweatshirt', slug: 'womens-sweatshirt', parentId: womens.id },
+  });
+  await prisma.category.upsert({
+    where: { slug: 'womens-jacket' },
+    update: {},
+    create: { name: 'Jacket', slug: 'womens-jacket', parentId: womens.id },
+  });
+  // Legacy categories for backward compatibility
+  await prisma.category.upsert({
+    where: { slug: 'womens-baggy' },
+    update: {},
+    create: { name: 'Baggy', slug: 'womens-baggy', parentId: womens.id },
+  });
+  await prisma.category.upsert({
+    where: { slug: 'womens-barrel' },
+    update: {},
+    create: { name: 'Barrel Fit', slug: 'womens-barrel', parentId: womens.id },
+  });
+
+  // Men's categories
+  const mens = await prisma.category.upsert({
     where: { slug: 'mens' },
     update: {},
-    create: { name: "Men's", slug: 'mens', description: 'Coming soon' },
+    create: { name: "Men's", slug: 'mens', description: "Men's clothing" },
+  });
+  // Men's fit categories (matching frontend SHOP_GENDER_FITS)
+  await prisma.category.upsert({
+    where: { slug: 'mens-cargo' },
+    update: {},
+    create: { name: 'Cargo', slug: 'mens-cargo', parentId: mens.id },
+  });
+  await prisma.category.upsert({
+    where: { slug: 'mens-slim-fit' },
+    update: {},
+    create: { name: 'Slim Fit', slug: 'mens-slim-fit', parentId: mens.id },
+  });
+  await prisma.category.upsert({
+    where: { slug: 'mens-regular-fit' },
+    update: {},
+    create: { name: 'Regular Fit', slug: 'mens-regular-fit', parentId: mens.id },
+  });
+  await prisma.category.upsert({
+    where: { slug: 'mens-skinny' },
+    update: {},
+    create: { name: 'Skinny', slug: 'mens-skinny', parentId: mens.id },
+  });
+  await prisma.category.upsert({
+    where: { slug: 'mens-relaxed-fit' },
+    update: {},
+    create: { name: 'Relaxed Fit', slug: 'mens-relaxed-fit', parentId: mens.id },
+  });
+  await prisma.category.upsert({
+    where: { slug: 'mens-shorts' },
+    update: {},
+    create: { name: 'Shorts', slug: 'mens-shorts', parentId: mens.id },
+  });
+  await prisma.category.upsert({
+    where: { slug: 'mens-jackets' },
+    update: {},
+    create: { name: 'Jackets', slug: 'mens-jackets', parentId: mens.id },
+  });
+  await prisma.category.upsert({
+    where: { slug: 'mens-sweatshirt' },
+    update: {},
+    create: { name: 'Sweatshirt', slug: 'mens-sweatshirt', parentId: mens.id },
   });
   console.log('✅ Categories');
 
