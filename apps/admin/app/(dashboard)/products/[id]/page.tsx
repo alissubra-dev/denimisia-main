@@ -318,6 +318,7 @@ export default function EditProductPage() {
       const currentSlug = slug || slugify(name);
 
       // Update existing variants with their new stock values
+      const variantErrors: string[] = [];
       for (const builderColor of variantsBuilder.colors) {
         if (!builderColor.name) continue;
 
@@ -326,9 +327,10 @@ export default function EditProductPage() {
           if (!sizeEntry.label) continue;
 
           // Check if this is an existing variant (has matching color and size)
+          // Use trim() to handle potential whitespace differences between API and builder
           const existingVariant = variants.find(
-            v => (v.color || '').toLowerCase() === builderColor.name.toLowerCase() &&
-                 (v.size || '').toLowerCase() === sizeEntry.label.toLowerCase()
+            v => (v.color || '').trim().toLowerCase() === builderColor.name.toLowerCase() &&
+                 (v.size || '').trim().toLowerCase() === sizeEntry.label.toLowerCase()
           );
 
           if (existingVariant) {
@@ -339,7 +341,9 @@ export default function EditProductPage() {
                 body: JSON.stringify({ stock: sizeEntry.stock }),
               });
             } catch (err) {
-              console.error('Failed to update variant stock:', err);
+              const msg = `Failed to update stock for ${builderColor.name} / ${sizeEntry.label}: ${err instanceof Error ? err.message : 'Unknown error'}`;
+              console.error(msg);
+              variantErrors.push(msg);
             }
           } else {
             // Create new variant
@@ -360,10 +364,19 @@ export default function EditProductPage() {
                 }),
               });
             } catch (err) {
-              console.error('Failed to create variant:', err);
+              const msg = `Failed to create variant for ${builderColor.name} / ${sizeEntry.label}: ${err instanceof Error ? err.message : 'Unknown error'}`;
+              console.error(msg);
+              variantErrors.push(msg);
             }
           }
         }
+      }
+
+      // If there were variant errors, show them to the user
+      if (variantErrors.length > 0) {
+        setError(`Some variant updates failed: ${variantErrors.join('; ')}`);
+        setSubmitting(false);
+        return;
       }
 
       // Revalidate storefront cache so changes appear immediately
