@@ -352,16 +352,24 @@ export default function EditProductPage() {
             const sizeCode = sizeEntry.label.replace(/[^A-Za-z0-9]/g, '');
 
             try {
+              // Build variant data - only include colorHex if it has a valid value
+              const variantData: Record<string, unknown> = {
+                sku: `${slugCode}-${colorCode}-${sizeCode}`,
+                size: sizeEntry.label,
+                color: builderColor.name,
+                stock: sizeEntry.stock,
+              };
+              // Only add colorHex if it has a valid hex value
+              if (builderColor.hex && /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(builderColor.hex)) {
+                variantData.colorHex = builderColor.hex;
+              }
+              if (builderColor.images.length > 0) {
+                variantData.images = builderColor.images;
+              }
+
               await adminFetch(`/products/${productId}/variants`, token, {
                 method: 'POST',
-                body: JSON.stringify({
-                  sku: `${slugCode}-${colorCode}-${sizeCode}`,
-                  size: sizeEntry.label,
-                  color: builderColor.name,
-                  colorHex: builderColor.hex,
-                  stock: sizeEntry.stock,
-                  images: builderColor.images.length > 0 ? builderColor.images : undefined,
-                }),
+                body: JSON.stringify(variantData),
               });
             } catch (err) {
               const msg = `Failed to create variant for ${builderColor.name} / ${sizeEntry.label}: ${err instanceof Error ? err.message : 'Unknown error'}`;
