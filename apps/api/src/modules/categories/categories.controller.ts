@@ -27,6 +27,14 @@ export class CategoriesController {
     return this.categoriesService.findAll();
   }
 
+  // Admin endpoint to get all categories including children
+  @Get('admin/all')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SUPPORT_STAFF)
+  findAllForAdmin() {
+    return this.categoriesService.findAllForAdmin();
+  }
+
   @Get(':slug')
   @PublicCache(300, 900)
   findBySlug(@Param('slug') slug: string) {

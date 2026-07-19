@@ -35,6 +35,20 @@ export class CategoriesService {
     );
   }
 
+  // Admin: Get all categories including children (no caching)
+  async findAllForAdmin() {
+    return this.prisma.category.findMany({
+      where: { deletedAt: null },
+      include: {
+        children: {
+          where: { deletedAt: null },
+          include: { children: { where: { deletedAt: null } } },
+        },
+      },
+      orderBy: { name: 'asc' },
+    });
+  }
+
   async findBySlug(slug: string) {
     return this.getOrSetCached(
       CATEGORY_SLUG_KEY(slug),

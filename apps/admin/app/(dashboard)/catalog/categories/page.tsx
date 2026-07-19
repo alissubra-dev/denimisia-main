@@ -44,7 +44,8 @@ export default function CategoriesPage() {
     setLoading(true);
     setError('');
     try {
-      const data = await adminFetch<Category[]>('/categories', token);
+      // Use admin endpoint to get all categories including children
+      const data = await adminFetch<Category[]>('/categories/admin/all', token);
       setCategories(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load categories');
