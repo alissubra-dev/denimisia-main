@@ -130,7 +130,7 @@ export class PathaoService {
   async getCities(): Promise<PathaoResponse<Record<string, unknown>[]>> {
     const token = await this.authenticate();
 
-    const response = await fetch(`${this.config.baseUrl}/api/v1/aladdin/cities`, {
+    const response = await fetch(`${this.config.baseUrl}/aladdin/api/v1/cities`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -146,7 +146,7 @@ export class PathaoService {
   async getZones(cityId: number): Promise<PathaoResponse<Record<string, unknown>[]>> {
     const token = await this.authenticate();
 
-    const response = await fetch(`${this.config.baseUrl}/api/v1/aladdin/zones?city_id=${cityId}`, {
+    const response = await fetch(`${this.config.baseUrl}/aladdin/api/v1/zones?city_id=${cityId}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -162,7 +162,7 @@ export class PathaoService {
   async getAreas(zoneId: number): Promise<PathaoResponse<Record<string, unknown>[]>> {
     const token = await this.authenticate();
 
-    const response = await fetch(`${this.config.baseUrl}/api/v1/aladdin/areas?zone_id=${zoneId}`, {
+    const response = await fetch(`${this.config.baseUrl}/aladdin/api/v1/areas?zone_id=${zoneId}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -182,7 +182,7 @@ export class PathaoService {
   ): Promise<PathaoResponse<Record<string, unknown>>> {
     const token = await this.authenticate();
 
-    const response = await fetch(`${this.config.baseUrl}/api/v1/aladdin/delivery/charge`, {
+    const response = await fetch(`${this.config.baseUrl}/aladdin/api/v1/delivery/charge`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -212,7 +212,7 @@ export class PathaoService {
     const token = await this.authenticate();
 
     // Build the order request with correct Pathao API field names
-    const orderUrl = `${this.config.baseUrl}/api/v1/aladdin/orders`;
+    const orderUrl = `${this.config.baseUrl}/aladdin/api/v1/orders`;
     const orderBody = {
       store_id: parseInt(this.config.storeId),
       merchant_order_id: orderId,
@@ -293,7 +293,7 @@ export class PathaoService {
     const token = await this.authenticate();
 
     const response = await fetch(
-      `${this.config.baseUrl}/api/v1/aladdin/orders/${trackingNumber}`,
+      `${this.config.baseUrl}/aladdin/api/v1/orders/${trackingNumber}`,
       {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -318,7 +318,7 @@ export class PathaoService {
     const token = await this.authenticate();
 
     const response = await fetch(
-      `${this.config.baseUrl}/api/v1/aladdin/orders/${trackingNumber}/cancel`,
+      `${this.config.baseUrl}/aladdin/api/v1/orders/${trackingNumber}/cancel`,
       {
         method: 'PUT',
         headers: {
