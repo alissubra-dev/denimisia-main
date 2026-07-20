@@ -77,11 +77,10 @@ export class PathaoService {
     }
 
     // Need to refresh or get new token
-    this.logger.log(`Authenticating with Pathao. BaseUrl: ${this.config.baseUrl}, ClientId: ${this.config.clientId ? 'set' : 'NOT SET'}, StoreId: ${this.config.storeId || 'NOT SET'}`);
+    const baseUrl = (this.config.baseUrl || '').replace(/\/$/, ''); // Remove trailing slash
+    const tokenUrl = `${baseUrl}/api/v1/oauth/token`;
 
-    // Try with /api/v1 prefix (Pathao API v1)
-    const tokenUrl = `${this.config.baseUrl}/api/v1/oauth/token`;
-    this.logger.log(`Token URL: ${tokenUrl}`);
+    this.logger.log(`Pathao Auth: baseUrl=${baseUrl}, tokenUrl=${tokenUrl}, hasClientId=${!!this.config.clientId}, hasSecret=${!!this.config.clientSecret}`);
 
     const response = await fetch(tokenUrl, {
       method: 'POST',
@@ -95,13 +94,15 @@ export class PathaoService {
       }),
     });
 
+    const responseText = await response.text();
+    this.logger.log(`Pathao auth response status: ${response.status}, body: ${responseText.substring(0, 200)}`);
+
     if (!response.ok) {
-      const error = await response.text();
-      this.logger.error(`Pathao auth failed with status ${response.status}: ${error}`);
-      throw new Error(`Failed to authenticate with Pathao: ${error}`);
+      this.logger.error(`Pathao auth failed: ${responseText}`);
+      throw new Error(`Failed to authenticate with Pathao: ${response.status} - ${responseText}`);
     }
 
-    const data = await response.json();
+    const data = JSON.parse(responseText);
 
     this.token = {
       accessToken: data.access_token,
