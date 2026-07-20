@@ -331,7 +331,7 @@ export class PathaoService {
 
     try {
       const result = await this.createConsignment(orderId, {
-        customerName: address?.name || order.guestName || order.user?.name || order.user?.firstName || 'Customer',
+        customerName: address?.name || order.guestName || 'Customer',
         customerPhone: phone,
         customerAddress: streetAddress,
         city: address?.city || '3', // Default to Dhaka if not set
