@@ -78,7 +78,9 @@ export class PathaoService {
 
     // Need to refresh or get new token
     const baseUrl = (this.config.baseUrl || '').replace(/\/$/, ''); // Remove trailing slash
-    const tokenUrl = `${baseUrl}/api/v1/oauth/token`;
+
+    // Try different endpoints - some Pathao accounts need different paths
+    let tokenUrl = `${baseUrl}/oauth/token`;
 
     this.logger.log(`Pathao Auth: baseUrl=${baseUrl}, tokenUrl=${tokenUrl}, hasClientId=${!!this.config.clientId}, hasSecret=${!!this.config.clientSecret}`);
 
