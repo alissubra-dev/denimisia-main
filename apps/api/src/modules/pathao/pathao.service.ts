@@ -311,13 +311,19 @@ export class PathaoService {
       name?: string;
       phone?: string;
       address?: string;
+      street?: string;
       city?: string;
       zone?: string;
     };
 
-    if (!address || !address.phone || !address.address) {
-      this.logger.warn(`Order ${order.orderNumber} missing shipping address`);
-      return;
+    // Try multiple sources for phone and address
+    const phone = address?.phone || order.guestPhone;
+    const streetAddress = address?.address || address?.street || 'Address not provided';
+
+    if (!phone || !streetAddress) {
+      const missing = !phone ? 'phone' : 'address';
+      this.logger.warn(`Order ${order.orderNumber} missing ${missing}`);
+      throw new Error(`Cannot create shipment: missing ${missing}. Please update order shipping details.`);
     }
 
     // Calculate total weight (estimate 0.5kg per item if not specified)
@@ -325,11 +331,11 @@ export class PathaoService {
 
     try {
       const result = await this.createConsignment(orderId, {
-        customerName: address.name || order.guestName || 'Customer',
-        customerPhone: address.phone,
-        customerAddress: address.address,
-        city: address.city || '3', // Default to Dhaka if not set
-        zone: address.zone || '9', // Default zone if not set
+        customerName: address?.name || order.guestName || order.user?.name || order.user?.firstName || 'Customer',
+        customerPhone: phone,
+        customerAddress: streetAddress,
+        city: address?.city || '3', // Default to Dhaka if not set
+        zone: address?.zone || '9', // Default zone if not set
         weight: totalWeight,
         description: `Order #${order.orderNumber} - ${order.items.length} items`,
         codAmount: Number(order.total),
