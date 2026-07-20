@@ -44,14 +44,22 @@ export class PathaoService {
     private configService: ConfigService,
     private prisma: PrismaService,
   ) {
+    // Use process.env directly to ensure we're getting the values
+    const baseUrl = process.env.PATHAO_BASE_URL || 'https://api-hermes.pathao.com';
+    const clientId = process.env.PATHAO_CLIENT_ID;
+    const clientSecret = process.env.PATHAO_CLIENT_SECRET;
+    const storeId = process.env.PATHAO_STORE_ID;
+
     this.config = {
-      baseUrl: this.configService.get('PATHAO_BASE_URL') || 'https://api-hermes.pathao.com',
-      clientId: this.configService.get('PATHAO_CLIENT_ID') || '',
-      clientSecret: this.configService.get('PATHAO_CLIENT_SECRET') || '',
-      storeId: this.configService.get('PATHAO_STORE_ID') || '',
+      baseUrl,
+      clientId: clientId || '',
+      clientSecret: clientSecret || '',
+      storeId: storeId || '',
     };
 
-    // Log config on startup (won't log actual values, just presence)
+    // Log config on startup
+    console.log(`[PATHAO] baseUrl=${baseUrl}, clientId=${clientId ? 'SET' : 'NOT SET'}, storeId=${storeId ? 'SET' : 'NOT SET'}`);
+
     if (!this.config.clientId || !this.config.clientSecret || !this.config.storeId) {
       this.logger.error('PATHAO CONFIG MISSING: clientId, clientSecret, or storeId not set in environment');
     } else {
