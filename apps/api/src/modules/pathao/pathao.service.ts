@@ -213,14 +213,17 @@ export class PathaoService {
 
     // Build the order request with correct Pathao API field names
     const orderUrl = `${this.config.baseUrl}/aladdin/api/v1/orders`;
+    const cityNum = parseInt(payload.city) || 3; // Default to Dhaka
+    const zoneNum = parseInt(payload.zone) || 14; // Default to Dhaka North
+
     const orderBody = {
       store_id: parseInt(this.config.storeId),
       merchant_order_id: orderId,
       recipient_name: payload.customerName,
       recipient_phone: payload.customerPhone,
       recipient_address: payload.customerAddress,
-      recipient_city: parseInt(payload.city),
-      recipient_zone: parseInt(payload.zone),
+      recipient_city: cityNum,
+      recipient_zone: zoneNum,
       item_weight: payload.weight,
       item_description: payload.description,
       amount_to_collect: payload.codAmount,
@@ -377,14 +380,25 @@ export class PathaoService {
       throw new Error(`Cannot create shipment: missing ${missing}. Please update order shipping details.`);
     }
 
-    // Get city and zone - validate zone belongs to city
-    let cityId = parseInt(address?.city || '3');
-    let zoneId = address?.zone ? parseInt(address.zone) : 0;
+    // Get city and zone from address - default to Dhaka if not set
+    let cityId = 3; // Dhaka - default city
+    let zoneId = 14; // Dhaka North - default zone (known valid for Dhaka)
 
-    console.log(`[PATHAO] Starting: cityId=${cityId}, zoneId=${zoneId}, address.zone=${address?.zone}`);
+    // Try to get from address if available
+    if (address?.city) {
+      const parsedCity = parseInt(address.city);
+      if (!isNaN(parsedCity)) cityId = parsedCity;
+    }
+    if (address?.zone) {
+      const parsedZone = parseInt(address.zone);
+      if (!isNaN(parsedZone)) zoneId = parsedZone;
+    }
 
-    // ALWAYS fetch valid zones from Pathao and use first one
+    console.log(`[PATHAO] Starting: cityId=${cityId}, zoneId=${zoneId}`);
+
+    // Re-authenticate to get fresh token (zones API might need fresh one)
     try {
+      await this.authenticate(); // Get fresh token
       console.log(`[PATHAO] Fetching zones for city ${cityId}...`);
       const zonesResponse = await this.getZones(cityId);
       console.log(`[PATHAO] Zones response:`, JSON.stringify(zonesResponse).substring(0, 500));
@@ -395,15 +409,11 @@ export class PathaoService {
 
         // ALWAYS use first zone from API - guaranteed to be valid
         zoneId = validZones[0].zone_id;
-        cityId = 3; // Force Dhaka
         console.log(`[PATHAO] Using zone: ${validZones[0].zone_name} (ID: ${zoneId})`);
       } else {
-        // Fallback: Dhaka North zone
-        zoneId = 14;
-        console.log(`[PATHAO] No zones found, using fallback zone: ${zoneId}`);
+        console.log(`[PATHAO] Using fallback zone: ${zoneId}`);
       }
     } catch (e) {
-      zoneId = 14;
       console.log(`[PATHAO] Zone fetch failed, using fallback: ${e}`);
     }
 
