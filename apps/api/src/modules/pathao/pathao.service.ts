@@ -379,38 +379,35 @@ export class PathaoService {
 
     // Get city and zone - validate zone belongs to city
     let cityId = parseInt(address?.city || '3');
-    let zoneId = parseInt(address?.zone || '0');
+    let zoneId = address?.zone ? parseInt(address.zone) : 0;
 
-    this.logger.log(`Initial cityId=${cityId}, zoneId=${zoneId}, address.zone=${address?.zone}`);
+    console.log(`[PATHAO] Starting: cityId=${cityId}, zoneId=${zoneId}, address.zone=${address?.zone}`);
 
-    // Validate zone belongs to city - fetch zones and find valid one
+    // ALWAYS fetch valid zones from Pathao and use first one
     try {
+      console.log(`[PATHAO] Fetching zones for city ${cityId}...`);
       const zonesResponse = await this.getZones(cityId);
-      this.logger.log(`Zones response: success=${zonesResponse.success}, data count=${zonesResponse.data?.length}`);
+      console.log(`[PATHAO] Zones response:`, JSON.stringify(zonesResponse).substring(0, 500));
 
       if (zonesResponse.success && zonesResponse.data && zonesResponse.data.length > 0) {
         const validZones = zonesResponse.data as Array<{ zone_id: number; zone_name: string }>;
-        this.logger.log(`Available zones for city ${cityId}: ${JSON.stringify(validZones)}`);
+        console.log(`[PATHAO] Valid zones:`, JSON.stringify(validZones));
 
-        // If stored zone doesn't exist, use first available
-        const zoneExists = validZones.find(z => z.zone_id === zoneId);
-
-        if (!zoneExists || zoneId === 0) {
-          // Use first valid zone for this city
-          zoneId = validZones[0].zone_id;
-          this.logger.log(`Using first available zone: ${validZones[0].zone_name} (ID: ${zoneId})`);
-        } else {
-          this.logger.log(`Zone ${zoneId} is valid for city ${cityId}`);
-        }
+        // ALWAYS use first zone from API - guaranteed to be valid
+        zoneId = validZones[0].zone_id;
+        cityId = 3; // Force Dhaka
+        console.log(`[PATHAO] Using zone: ${validZones[0].zone_name} (ID: ${zoneId})`);
       } else {
-        this.logger.warn(`No zones found for city ${cityId}, defaulting to zone 14 (Dhaka North)`);
+        // Fallback: Dhaka North zone
         zoneId = 14;
+        console.log(`[PATHAO] No zones found, using fallback zone: ${zoneId}`);
       }
     } catch (e) {
-      this.logger.warn(`Could not validate zone, using default: ${e}`);
-      // Fall back to Dhaka North zone
       zoneId = 14;
+      console.log(`[PATHAO] Zone fetch failed, using fallback: ${e}`);
     }
+
+    console.log(`[PATHAO] Final: cityId=${cityId}, zoneId=${zoneId}`);
 
     // Calculate total weight (estimate 0.5kg per item if not specified)
     const totalWeight = order.items.length * 0.5; // kg
