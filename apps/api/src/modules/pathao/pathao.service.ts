@@ -201,28 +201,37 @@ export class PathaoService {
 
     const result = await response.json();
 
+    this.logger.log(`Pathao response: ${JSON.stringify(result)}`);
+
     if (!response.ok || !result.success) {
       this.logger.error(`Pathao consignment creation failed: ${JSON.stringify(result)}`);
-      throw new Error(result.message || 'Failed to create consignment');
+      throw new Error(result.message || result.errors || 'Failed to create consignment');
     }
 
-    const consignmentData = result.data[0];
+    // Pathao returns data as array, try different paths
+    const consignmentData = result.data?.[0] ?? result.data ?? result;
+    this.logger.log(`Consignment data: ${JSON.stringify(consignmentData)}`);
+
+    // Extract tracking info - handle different field names
+    const trackingNumber = consignmentData.tracking_id ?? consignmentData.trackingId ?? consignmentData.order_id ?? 'N/A';
+    const consignmentId = consignmentData.consignment_id ?? consignmentData.consignmentId ?? consignmentData.id ?? 'N/A';
+    const status = consignmentData.status ?? consignmentData.delivery_status ?? 'Pending';
 
     // Update order with Pathao details
     await this.prisma.order.update({
       where: { id: orderId },
       data: {
         courier: 'pathao',
-        trackingNumber: consignmentData.tracking_id,
-        consignmentId: consignmentData.consignment_id.toString(),
-        deliveryStatus: consignmentData.status,
+        trackingNumber: String(trackingNumber),
+        consignmentId: String(consignmentId),
+        deliveryStatus: status,
       },
     });
 
     return {
-      trackingNumber: consignmentData.tracking_id,
-      consignmentId: consignmentData.consignment_id.toString(),
-      status: consignmentData.status,
+      trackingNumber: String(trackingNumber),
+      consignmentId: String(consignmentId),
+      status,
     };
   }
 
