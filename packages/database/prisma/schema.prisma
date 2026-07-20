@@ -538,6 +538,10 @@ model Order {
   total           Decimal
   notes           String?
   trackingNumber  String?
+  // Courier integration fields
+  courier         String?      // e.g., "pathao", "ssl-commerz"
+  consignmentId   String?      // Courier's consignment ID
+  deliveryStatus  String?      // Current delivery status from courier
   // Admin who created this order (for manual orders from phone/admin panel)
   createdBy       String?
   createdByUser   User?       @relation("CreatedByUser", fields: [createdBy], references: [id], onDelete: SetNull)

@@ -13,6 +13,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { ProductsModule } from './modules/products/products.module';
 import { CategoriesModule } from './modules/categories/categories.module';
+import { PathaoModule } from './modules/pathao/pathao.module';
 import { CollectionsModule } from './modules/collections/collections.module';
 import { CartModule } from './modules/cart/cart.module';
 import { WishlistModule } from './modules/wishlist/wishlist.module';
@@ -54,6 +55,7 @@ import { AdminModule } from './modules/admin/admin.module';
     UsersModule,
     ProductsModule,
     CategoriesModule,
+    PathaoModule,
     CollectionsModule,
     CartModule,
     WishlistModule,
