@@ -255,7 +255,8 @@ export class PathaoService {
 
     if (!response.ok || !result.success) {
       this.logger.error(`Pathao consignment creation failed: ${JSON.stringify(result)}`);
-      throw new Error(result.message || result.errors || 'Failed to create consignment');
+      const errorMsg = result.message || (result.errors ? JSON.stringify(result.errors) : 'Failed to create consignment');
+      throw new Error(errorMsg);
     }
 
     // Pathao returns data as array, try different paths
