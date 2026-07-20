@@ -62,6 +62,8 @@ export class PathaoService {
     }
 
     // Need to refresh or get new token
+    this.logger.log(`Authenticating with Pathao. BaseUrl: ${this.config.baseUrl}, ClientId: ${this.config.clientId ? 'set' : 'NOT SET'}, StoreId: ${this.config.storeId || 'NOT SET'}`);
+
     const response = await fetch(`${this.config.baseUrl}/oauth/token`, {
       method: 'POST',
       headers: {
@@ -76,8 +78,8 @@ export class PathaoService {
 
     if (!response.ok) {
       const error = await response.text();
-      this.logger.error(`Pathao auth failed: ${error}`);
-      throw new Error('Failed to authenticate with Pathao');
+      this.logger.error(`Pathao auth failed with status ${response.status}: ${error}`);
+      throw new Error(`Failed to authenticate with Pathao: ${error}`);
     }
 
     const data = await response.json();
