@@ -379,9 +379,9 @@ export class PathaoService {
 
     // Get city and zone - validate zone belongs to city
     let cityId = parseInt(address?.city || '3');
-    let zoneId = parseInt(address?.zone || '9');
+    let zoneId = parseInt(address?.zone || '0');
 
-    this.logger.log(`Initial cityId=${cityId}, zoneId=${zoneId}`);
+    this.logger.log(`Initial cityId=${cityId}, zoneId=${zoneId}, address.zone=${address?.zone}`);
 
     // Validate zone belongs to city - fetch zones and find valid one
     try {
@@ -390,25 +390,26 @@ export class PathaoService {
 
       if (zonesResponse.success && zonesResponse.data && zonesResponse.data.length > 0) {
         const validZones = zonesResponse.data as Array<{ zone_id: number; zone_name: string }>;
-        this.logger.log(`Available zones for city ${cityId}: ${JSON.stringify(validZones.slice(0, 5))}`);
+        this.logger.log(`Available zones for city ${cityId}: ${JSON.stringify(validZones)}`);
 
+        // If stored zone doesn't exist, use first available
         const zoneExists = validZones.find(z => z.zone_id === zoneId);
 
-        if (!zoneExists) {
+        if (!zoneExists || zoneId === 0) {
           // Use first valid zone for this city
-          this.logger.warn(`Zone ${zoneId} not valid for city ${cityId}, using first available zone: ${validZones[0].zone_name}`);
           zoneId = validZones[0].zone_id;
+          this.logger.log(`Using first available zone: ${validZones[0].zone_name} (ID: ${zoneId})`);
         } else {
           this.logger.log(`Zone ${zoneId} is valid for city ${cityId}`);
         }
       } else {
-        this.logger.warn(`No zones found for city ${cityId}, using default zone 9`);
-        zoneId = 9;
+        this.logger.warn(`No zones found for city ${cityId}, defaulting to zone 14 (Dhaka North)`);
+        zoneId = 14;
       }
     } catch (e) {
       this.logger.warn(`Could not validate zone, using default: ${e}`);
-      // Fall back to default Dhaka zone
-      zoneId = 9;
+      // Fall back to Dhaka North zone
+      zoneId = 14;
     }
 
     // Calculate total weight (estimate 0.5kg per item if not specified)
