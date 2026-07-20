@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 
-interface PathaoConfig {
+export interface PathaoConfig {
   baseUrl: string;
   clientId: string;
   clientSecret: string;
@@ -15,7 +15,7 @@ interface PathaoToken {
   expiresAt: number;
 }
 
-interface CreateConsignmentPayload {
+export interface CreateConsignmentPayload {
   customerName: string;
   customerPhone: string;
   customerAddress: string;
@@ -27,7 +27,7 @@ interface CreateConsignmentPayload {
   quantity: number;
 }
 
-interface PathaoResponse<T> {
+export interface PathaoResponse<T> {
   success: boolean;
   message?: string;
   data?: T;

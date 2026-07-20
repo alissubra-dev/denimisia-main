@@ -1,44 +1,32 @@
 // Quick migration runner - run with: node scripts/run-migration.js
-// Set DATABASE_URL environment variable first
+// This adds courier fields to the Order table
 
-require('dotenv').config();
-const { PrismaClient } = require('@prisma/client');
-
-const prisma = new PrismaClient();
+const { Client } = require('pg');
 
 async function main() {
-  if (!process.env.DATABASE_URL) {
-    console.error('❌ DATABASE_URL not set!');
-    console.log('Set it with: set DATABASE_URL=your_supabase_url');
-    process.exit(1);
-  }
+  const connStr = 'postgresql://postgres:*Denimisia*@db.osrmngoqdsmgbqrluare.supabase.co:5432/postgres?sslmode=require';
+  const client = new Client(connStr);
 
-  console.log('🔌 Connecting to database...');
+  await client.connect();
 
   try {
-    await prisma.$connect();
-    console.log('✅ Connected successfully!');
-  } catch (e) {
-    console.error('❌ Connection failed:', e.message);
-    process.exit(1);
+    // Add new columns to Order table
+    await client.query(`
+      ALTER TABLE "Order"
+      ADD COLUMN IF NOT EXISTS courier TEXT,
+      ADD COLUMN IF NOT EXISTS "consignmentId" TEXT,
+      ADD COLUMN IF NOT EXISTS "deliveryStatus" TEXT;
+    `);
+    console.log('✅ Migration completed successfully');
+  } catch (error) {
+    if (error.message.includes('already exists')) {
+      console.log('ℹ️ Columns already exist');
+    } else {
+      console.error('❌ Migration failed:', error.message);
+    }
+  } finally {
+    await client.end();
   }
-
-  console.log('📦 Creating tables (prisma db push)...');
-
-  // This creates/updates the schema
-  const { execSync } = require('child_process');
-
-  try {
-    execSync('npx prisma db push --force-reset', {
-      stdio: 'inherit',
-      cwd: './packages/database'
-    });
-    console.log('✅ Tables created successfully!');
-  } catch (e) {
-    console.error('❌ Failed to create tables:', e.message);
-  }
-
-  await prisma.$disconnect();
 }
 
 main();
