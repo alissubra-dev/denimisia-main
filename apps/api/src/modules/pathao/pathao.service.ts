@@ -7,6 +7,8 @@ export interface PathaoConfig {
   clientId: string;
   clientSecret: string;
   storeId: string;
+  username: string;
+  password: string;
 }
 
 interface PathaoToken {
@@ -45,30 +47,35 @@ export class PathaoService {
     private prisma: PrismaService,
   ) {
     // Use process.env directly to ensure we're getting the values
-    const baseUrl = process.env.PATHAO_BASE_URL || 'https://api-hermes.pathao.com';
+    // Updated to correct Pathao API base URL (Aladdin API)
+    const baseUrl = process.env.PATHAO_BASE_URL || 'https://api.pathao.com';
     const clientId = process.env.PATHAO_CLIENT_ID;
     const clientSecret = process.env.PATHAO_CLIENT_SECRET;
     const storeId = process.env.PATHAO_STORE_ID;
+    const username = process.env.PATHAO_USERNAME;
+    const password = process.env.PATHAO_PASSWORD;
 
     this.config = {
       baseUrl,
       clientId: clientId || '',
       clientSecret: clientSecret || '',
       storeId: storeId || '',
+      username: username || '',
+      password: password || '',
     };
 
     // Log config on startup
-    console.log(`[PATHAO] baseUrl=${baseUrl}, clientId=${clientId ? 'SET' : 'NOT SET'}, storeId=${storeId ? 'SET' : 'NOT SET'}`);
+    console.log(`[PATHAO] baseUrl=${baseUrl}, clientId=${clientId ? 'SET' : 'NOT SET'}, storeId=${storeId ? 'SET' : 'NOT SET'}, username=${username ? 'SET' : 'NOT SET'}`);
 
-    if (!this.config.clientId || !this.config.clientSecret || !this.config.storeId) {
-      this.logger.error('PATHAO CONFIG MISSING: clientId, clientSecret, or storeId not set in environment');
+    if (!this.config.clientId || !this.config.clientSecret || !this.config.storeId || !this.config.username || !this.config.password) {
+      this.logger.error('PATHAO CONFIG MISSING: clientId, clientSecret, storeId, username, or password not set in environment');
     } else {
       this.logger.log('Pathao configuration loaded successfully');
     }
   }
 
   /**
-   * Authenticate with Pathao API
+   * Authenticate with Pathao API (Aladdin v1)
    */
   async authenticate(): Promise<string> {
     // Check if we have a valid token
@@ -79,10 +86,10 @@ export class PathaoService {
     // Need to refresh or get new token
     const baseUrl = (this.config.baseUrl || '').replace(/\/$/, ''); // Remove trailing slash
 
-    // Try different endpoints - some Pathao accounts need different paths
-    let tokenUrl = `${baseUrl}/oauth/token`;
+    // Updated to use Aladdin API v1 token endpoint
+    const tokenUrl = `${baseUrl}/aladdin/api/v1/issue-token`;
 
-    this.logger.log(`Pathao Auth: baseUrl=${baseUrl}, tokenUrl=${tokenUrl}, hasClientId=${!!this.config.clientId}, hasSecret=${!!this.config.clientSecret}`);
+    this.logger.log(`Pathao Auth: baseUrl=${baseUrl}, tokenUrl=${tokenUrl}, hasClientId=${!!this.config.clientId}, hasSecret=${!!this.config.clientSecret}, hasUsername=${!!this.config.username}`);
 
     const response = await fetch(tokenUrl, {
       method: 'POST',
@@ -90,9 +97,11 @@ export class PathaoService {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        grant_type: 'client_credentials',
+        grant_type: 'password',
         client_id: this.config.clientId,
         client_secret: this.config.clientSecret,
+        username: this.config.username,
+        password: this.config.password,
       }),
     });
 
