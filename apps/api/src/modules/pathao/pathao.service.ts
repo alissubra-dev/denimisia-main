@@ -381,19 +381,29 @@ export class PathaoService {
     let cityId = parseInt(address?.city || '3');
     let zoneId = parseInt(address?.zone || '9');
 
+    this.logger.log(`Initial cityId=${cityId}, zoneId=${zoneId}`);
+
     // Validate zone belongs to city - fetch zones and find valid one
     try {
       const zonesResponse = await this.getZones(cityId);
+      this.logger.log(`Zones response: success=${zonesResponse.success}, data count=${zonesResponse.data?.length}`);
+
       if (zonesResponse.success && zonesResponse.data && zonesResponse.data.length > 0) {
         const validZones = zonesResponse.data as Array<{ zone_id: number; zone_name: string }>;
+        this.logger.log(`Available zones for city ${cityId}: ${JSON.stringify(validZones.slice(0, 5))}`);
+
         const zoneExists = validZones.find(z => z.zone_id === zoneId);
 
         if (!zoneExists) {
           // Use first valid zone for this city
-          this.logger.warn(`Zone ${zoneId} not valid for city ${cityId}, using first available zone`);
+          this.logger.warn(`Zone ${zoneId} not valid for city ${cityId}, using first available zone: ${validZones[0].zone_name}`);
           zoneId = validZones[0].zone_id;
-          this.logger.log(`Using zone: ${validZones[0].zone_name} (ID: ${zoneId})`);
+        } else {
+          this.logger.log(`Zone ${zoneId} is valid for city ${cityId}`);
         }
+      } else {
+        this.logger.warn(`No zones found for city ${cityId}, using default zone 9`);
+        zoneId = 9;
       }
     } catch (e) {
       this.logger.warn(`Could not validate zone, using default: ${e}`);
