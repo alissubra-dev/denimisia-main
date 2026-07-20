@@ -168,6 +168,7 @@ interface Order {
   shippingAddress?: ShippingAddress;
   paymentMethod?: string;
   notes?: string;
+  trackingNumber?: string;
   courier?: string;
   consignmentId?: string;
   deliveryStatus?: string;
