@@ -79,7 +79,11 @@ export class PathaoService {
     // Need to refresh or get new token
     this.logger.log(`Authenticating with Pathao. BaseUrl: ${this.config.baseUrl}, ClientId: ${this.config.clientId ? 'set' : 'NOT SET'}, StoreId: ${this.config.storeId || 'NOT SET'}`);
 
-    const response = await fetch(`${this.config.baseUrl}/oauth/token`, {
+    // Try with /api/v1 prefix (Pathao API v1)
+    const tokenUrl = `${this.config.baseUrl}/api/v1/oauth/token`;
+    this.logger.log(`Token URL: ${tokenUrl}`);
+
+    const response = await fetch(tokenUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
