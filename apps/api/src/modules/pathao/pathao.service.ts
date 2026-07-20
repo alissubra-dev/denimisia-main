@@ -211,28 +211,45 @@ export class PathaoService {
   }> {
     const token = await this.authenticate();
 
-    const response = await fetch(`${this.config.baseUrl}/api/v1/aladdin/orders`, {
+    // Build the order request with correct Pathao API field names
+    const orderUrl = `${this.config.baseUrl}/api/v1/aladdin/orders`;
+    const orderBody = {
+      store_id: parseInt(this.config.storeId),
+      merchant_order_id: orderId,
+      recipient_name: payload.customerName,
+      recipient_phone: payload.customerPhone,
+      recipient_address: payload.customerAddress,
+      recipient_city: parseInt(payload.city),
+      recipient_zone: parseInt(payload.zone),
+      item_weight: payload.weight,
+      item_description: payload.description,
+      amount_to_collect: payload.codAmount,
+      item_quantity: payload.quantity,
+      delivery_type: 48, // 48 = Normal delivery
+      item_type: 2, // 2 = Parcel (not document)
+    };
+
+    this.logger.log(`Creating Pathao order: URL=${orderUrl}, body=${JSON.stringify(orderBody)}`);
+
+    const response = await fetch(orderUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        store_id: this.config.storeId,
-        merchant_order_id: orderId,
-        recipient_name: payload.customerName,
-        recipient_phone: payload.customerPhone,
-        recipient_address: payload.customerAddress,
-        city_id: parseInt(payload.city),
-        zone_id: parseInt(payload.zone),
-        weight: payload.weight,
-        description: payload.description,
-        cod_amount: payload.codAmount,
-        item_quantity: payload.quantity,
-      }),
+      body: JSON.stringify(orderBody),
     });
 
-    const result = await response.json();
+    const responseText = await response.text();
+    this.logger.log(`Pathao order response: status=${response.status}, body=${responseText.substring(0, 500)}`);
+
+    let result: Record<string, unknown>;
+    try {
+      result = JSON.parse(responseText);
+    } catch (e) {
+      this.logger.error(`Failed to parse Pathao response as JSON: ${responseText.substring(0, 200)}`);
+      throw new Error(`Pathao API error: ${response.status} - ${responseText.substring(0, 200)}`);
+    }
 
     this.logger.log(`Pathao response: ${JSON.stringify(result)}`);
 
