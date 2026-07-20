@@ -50,6 +50,13 @@ export class PathaoService {
       clientSecret: this.configService.get('PATHAO_CLIENT_SECRET') || '',
       storeId: this.configService.get('PATHAO_STORE_ID') || '',
     };
+
+    // Log config on startup (won't log actual values, just presence)
+    if (!this.config.clientId || !this.config.clientSecret || !this.config.storeId) {
+      this.logger.error('PATHAO CONFIG MISSING: clientId, clientSecret, or storeId not set in environment');
+    } else {
+      this.logger.log('Pathao configuration loaded successfully');
+    }
   }
 
   /**
