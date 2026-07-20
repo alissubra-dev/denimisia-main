@@ -168,6 +168,9 @@ interface Order {
   shippingAddress?: ShippingAddress;
   paymentMethod?: string;
   notes?: string;
+  courier?: string;
+  consignmentId?: string;
+  deliveryStatus?: string;
   createdAt: string;
   updatedAt?: string;
 }
@@ -250,6 +253,7 @@ export default function OrderDetailPage() {
   const [refundConfirmOpen, setRefundConfirmOpen] = useState(false);
   const [statusConfirmOpen, setStatusConfirmOpen] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<OrderStatus | null>(null);
+  const [creatingShipment, setCreatingShipment] = useState(false);
 
   const fetchOrder = useCallback(async () => {
     if (!token) return;
@@ -290,6 +294,40 @@ export default function OrderDetailPage() {
       setUpdatingStatus(false);
       setStatusConfirmOpen(false);
       setPendingStatus(null);
+    }
+  };
+
+  const handleCreateShipment = async () => {
+    if (!token || !order) return;
+    if (order.courier) {
+      setActionBanner({
+        tone: 'error',
+        message: `Shipment already created via ${order.courier}`,
+      });
+      return;
+    }
+    setCreatingShipment(true);
+    setActionBanner(null);
+    try {
+      const result = await adminFetch<{
+        trackingNumber: string;
+        consignmentId: string;
+        status: string;
+      }>(`/pathao/shipments/${orderId}`, token, {
+        method: 'POST',
+      });
+      await fetchOrder();
+      setActionBanner({
+        tone: 'success',
+        message: `Shipment created! Tracking: ${result.trackingNumber}`,
+      });
+    } catch (err: unknown) {
+      setActionBanner({
+        tone: 'error',
+        message: err instanceof Error ? err.message : 'Failed to create shipment',
+      });
+    } finally {
+      setCreatingShipment(false);
     }
   };
 
@@ -821,6 +859,49 @@ export default function OrderDetailPage() {
             ) : (
               <p className="text-xs font-semibold uppercase tracking-widest text-secondary">
                 No address provided
+              </p>
+            )}
+          </div>
+
+          {/* Courier / Shipment */}
+          <div className="bg-surface-container-lowest rounded-sm border border-outline-variant/5 p-6">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-secondary mb-4">
+              Courier
+            </p>
+            {order.courier ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold capitalize">{order.courier}</span>
+                  {order.deliveryStatus && (
+                    <span className="px-2 py-1 bg-surface-container text-xs rounded-sm">
+                      {order.deliveryStatus}
+                    </span>
+                  )}
+                </div>
+                {order.trackingNumber && (
+                  <p className="text-xs text-secondary">
+                    Tracking: <span className="font-mono">{order.trackingNumber}</span>
+                  </p>
+                )}
+                {order.consignmentId && (
+                  <p className="text-xs text-secondary">
+                    Consignment ID: <span className="font-mono">{order.consignmentId}</span>
+                  </p>
+                )}
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={handleCreateShipment}
+                disabled={creatingShipment || order.status === 'PENDING'}
+                className="px-4 py-2 bg-primary text-on-primary text-xs font-semibold uppercase tracking-widest hover:opacity-90 transition-opacity duration-300 ease-editorial disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {creatingShipment ? 'Creating...' : 'Create Pathao Shipment'}
+              </button>
+            )}
+            {order.status === 'PENDING' && !order.courier && (
+              <p className="text-xs text-secondary mt-2">
+                Confirm order first to create shipment
               </p>
             )}
           </div>
