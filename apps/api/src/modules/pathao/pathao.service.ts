@@ -377,6 +377,30 @@ export class PathaoService {
       throw new Error(`Cannot create shipment: missing ${missing}. Please update order shipping details.`);
     }
 
+    // Get city and zone - validate zone belongs to city
+    let cityId = parseInt(address?.city || '3');
+    let zoneId = parseInt(address?.zone || '9');
+
+    // Validate zone belongs to city - fetch zones and find valid one
+    try {
+      const zonesResponse = await this.getZones(cityId);
+      if (zonesResponse.success && zonesResponse.data && zonesResponse.data.length > 0) {
+        const validZones = zonesResponse.data as Array<{ zone_id: number; zone_name: string }>;
+        const zoneExists = validZones.find(z => z.zone_id === zoneId);
+
+        if (!zoneExists) {
+          // Use first valid zone for this city
+          this.logger.warn(`Zone ${zoneId} not valid for city ${cityId}, using first available zone`);
+          zoneId = validZones[0].zone_id;
+          this.logger.log(`Using zone: ${validZones[0].zone_name} (ID: ${zoneId})`);
+        }
+      }
+    } catch (e) {
+      this.logger.warn(`Could not validate zone, using default: ${e}`);
+      // Fall back to default Dhaka zone
+      zoneId = 9;
+    }
+
     // Calculate total weight (estimate 0.5kg per item if not specified)
     const totalWeight = order.items.length * 0.5; // kg
 
@@ -385,8 +409,8 @@ export class PathaoService {
         customerName: address?.name || order.guestName || 'Customer',
         customerPhone: phone,
         customerAddress: streetAddress,
-        city: address?.city || '3', // Default to Dhaka if not set
-        zone: address?.zone || '9', // Default zone if not set
+        city: String(cityId),
+        zone: String(zoneId),
         weight: totalWeight,
         description: `Order #${order.orderNumber} - ${order.items.length} items`,
         codAmount: Number(order.total),
