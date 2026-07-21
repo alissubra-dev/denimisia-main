@@ -424,7 +424,7 @@ describe('OrdersService', () => {
       expect(mockTx.order.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
-            shippingCost: 120,
+            shippingCost: 130,
           }),
         }),
       );

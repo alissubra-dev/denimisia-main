@@ -1103,10 +1103,10 @@ export class OrdersService {
     discountCode: string | undefined,
     subtotalAfterDiscount: number,
   ): Promise<number> {
-    let shippingCost = 80;
+    let shippingCost = 70;
     const city = ((shippingAddress?.city as string) ?? '').toLowerCase();
     if (city && city !== 'dhaka') {
-      shippingCost = 120;
+      shippingCost = 130;
     }
     if (subtotalAfterDiscount >= 1500) {
       shippingCost = 0;
