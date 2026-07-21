@@ -26,7 +26,7 @@ export default function CheckoutPage() {
   const [street, setStreet] = useState('');
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
-  const [zip, setZip] = useState('');
+  const DIVISIONS = ['Dhaka', 'Barishal', 'Chattogram', 'Khulna', 'Rajshahi', 'Sylhet', 'Rangpur', 'Mymensingh'];
   // Phone is pre-filled from profile.phones[0] for signed-in users once
   // the profile fetch completes. A separate useEffect syncs it when the
   // profile arrives.
@@ -222,7 +222,6 @@ export default function CheckoutPage() {
             line1: street,
             city,
             state,
-            zip,
             phone,
           },
           ...(isGuest
@@ -377,31 +376,28 @@ export default function CheckoutPage() {
             </div>
             <div>
               <label htmlFor="state" className="mb-1.5 block text-xs text-muted">Division/State</label>
-              <input
-                id="state"
-                type="text"
-                value={state}
-                onChange={(e) => setState(e.target.value)}
-                required
-                className="w-full border border-border bg-transparent px-4 py-3 text-sm text-ink outline-none focus:border-ink"
-              />
+              <div className="relative">
+                <input
+                  id="state"
+                  type="text"
+                  value={state}
+                  onChange={(e) => setState(e.target.value)}
+                  required
+                  placeholder="Search division..."
+                  list="divisions-list"
+                  className="w-full border border-border bg-transparent px-4 py-3 text-sm text-ink outline-none focus:border-ink"
+                />
+                <datalist id="divisions-list">
+                  {DIVISIONS.map((d) => (
+                    <option key={d} value={d} />
+                  ))}
+                </datalist>
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="zip" className="mb-1.5 block text-xs text-muted">Postal Code</label>
-              <input
-                id="zip"
-                type="text"
-                value={zip}
-                onChange={(e) => setZip(e.target.value)}
-                required
-                className="w-full border border-border bg-transparent px-4 py-3 text-sm text-ink outline-none focus:border-ink"
-              />
-            </div>
-            <div>
-              <label htmlFor="phone" className="mb-1.5 block text-xs text-muted">Phone</label>
+          <div>
+            <label htmlFor="phone" className="mb-1.5 block text-xs text-muted">Phone</label>
               <input
                 id="phone"
                 type="tel"

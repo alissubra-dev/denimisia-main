@@ -61,7 +61,10 @@ export function CreateOrderModal({
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [shippingAddress, setShippingAddress] = useState('');
+  const [shippingCity, setShippingCity] = useState('');
+  const [shippingDivision, setShippingDivision] = useState('');
   const [shippingLocation, setShippingLocation] = useState<'insideDhaka' | 'outsideDhaka'>('insideDhaka');
+  const DIVISIONS = ['Dhaka', 'Barishal', 'Chattogram', 'Khulna', 'Rajshahi', 'Sylhet', 'Rangpur', 'Mymensingh'];
   const [notes, setNotes] = useState('');
   const [items, setItems] = useState<OrderItem[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -95,6 +98,8 @@ export function CreateOrderModal({
       setCustomerEmail('');
       setCustomerPhone('');
       setShippingAddress('');
+      setShippingCity('');
+      setShippingDivision('');
       setShippingLocation('insideDhaka');
       setNotes('');
       setItems([]);
@@ -170,6 +175,8 @@ export function CreateOrderModal({
         })),
         shippingAddress: {
           address: shippingAddress,
+          city: shippingCity,
+          state: shippingDivision,
           location: shippingLocation,
         },
         shippingCost: shippingCost,
@@ -436,16 +443,48 @@ export function CreateOrderModal({
                   <option value="outsideDhaka">Outside Dhaka - 130 BDT</option>
                 </select>
               </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-2">
+                    City
+                  </label>
+                  <input
+                    type="text"
+                    value={shippingCity}
+                    onChange={(e) => setShippingCity(e.target.value)}
+                    className="w-full px-4 py-3 bg-surface-container-high border border-outline-variant/20 rounded-sm text-sm text-on-surface placeholder:text-secondary/50 focus:outline-none focus:border-primary"
+                    placeholder="e.g., Dhaka, Chattogram"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-2">
+                    Division/State
+                  </label>
+                  <input
+                    type="text"
+                    value={shippingDivision}
+                    onChange={(e) => setShippingDivision(e.target.value)}
+                    list="admin-divisions-list"
+                    className="w-full px-4 py-3 bg-surface-container-high border border-outline-variant/20 rounded-sm text-sm text-on-surface placeholder:text-secondary/50 focus:outline-none focus:border-primary"
+                    placeholder="Search division..."
+                  />
+                  <datalist id="admin-divisions-list">
+                    {DIVISIONS.map((d) => (
+                      <option key={d} value={d} />
+                    ))}
+                  </datalist>
+                </div>
+              </div>
               <div className="md:col-span-2">
                 <label className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-2">
-                  Address
+                  Full Address
                 </label>
                 <textarea
                   value={shippingAddress}
                   onChange={(e) => setShippingAddress(e.target.value)}
                   className="w-full px-4 py-3 bg-surface-container-high border border-outline-variant/20 rounded-sm text-sm text-on-surface placeholder:text-secondary/50 focus:outline-none focus:border-primary"
                   rows={3}
-                  placeholder="Enter complete shipping address"
+                  placeholder="Enter complete shipping address (minimum 10 characters)"
                 />
               </div>
             </div>
