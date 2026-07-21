@@ -137,6 +137,7 @@ interface ShippingAddress {
   name?: string;
   address?: string;
   street?: string;
+  line1?: string;
   city?: string;
   state?: string;
   division?: string;
