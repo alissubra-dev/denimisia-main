@@ -211,7 +211,7 @@ export class AdminSeedController {
             compareAtPrice: compareAtPrice,
             images: product.variants.map(v => v.source_image).filter(Boolean),
             tags: product.tags,
-            type: 'DENIM',
+            type: 'DENIM' as any,
             isActive: true,
             categoryId: category.id || defaultCategory.id,
           }
@@ -219,12 +219,12 @@ export class AdminSeedController {
 
         // Create variants with sizes
         for (const variant of product.variants) {
-          const stock = Object.values(variant.sizes).reduce((a: number, b: number) => a + b, 0);
+          const stock = Object.values(variant.sizes).reduce((a: number, b: number) => a + Number(b), 0);
 
           if (stock > 0) {
             // Create a variant for each size
             for (const [size, qty] of Object.entries(variant.sizes)) {
-              if (qty > 0) {
+              if (Number(qty) > 0) {
                 await this.prisma.productVariant.create({
                   data: {
                     productId: createdProduct.id,
@@ -233,7 +233,7 @@ export class AdminSeedController {
                     color: variant.wash_name,
                     colorHex: variant.wash_hex,
                     price: variant.special_price_bdt || variant.price_bdt,
-                    stock: qty,
+                    stock: Number(qty),
                     images: variant.source_image ? [variant.source_image] : [],
                     isActive: variant.status === 'enabled',
                   }
