@@ -32,6 +32,8 @@ export interface CreateConsignmentPayload {
 export interface PathaoResponse<T> {
   success: boolean;
   message?: string;
+  type?: string;
+  code?: number;
   data?: T;
   errors?: Record<string, string[]>;
 }
