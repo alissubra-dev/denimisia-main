@@ -106,9 +106,11 @@ export default function CategoriesPage() {
           <PrimaryButton icon="add" onClick={() => setModalOpen(true)}>
             New Category
           </PrimaryButton>
-          <PrimaryButton icon="upload" onClick={importProducts} className="ml-2">
-            Import Products
-          </PrimaryButton>
+          <span className="ml-2 inline-block">
+            <PrimaryButton icon="upload" onClick={importProducts}>
+              Import Products
+            </PrimaryButton>
+          </span>
         </>
       }
     >
