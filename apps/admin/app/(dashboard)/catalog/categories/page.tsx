@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { adminPost } from '@/lib/api';
+import { adminFetch, adminPost } from '@/lib/api';
 import { PageShell } from '@/components/page-shell';
 import {
   Banner,
