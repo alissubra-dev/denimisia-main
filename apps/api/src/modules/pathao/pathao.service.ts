@@ -425,8 +425,10 @@ export class PathaoService {
       // Check for success - Pathao returns either "success": true OR "type": "success"
       const zonesSuccess = zonesResponse.success === true || zonesResponse.type === 'success' || zonesResponse.code === 200;
 
-      if (zonesSuccess && zonesResponse.data && zonesResponse.data.length > 0) {
-        const validZones = zonesResponse.data as Array<{ zone_id: number; zone_name: string }>;
+      // Pathao returns data in nested format: data.data
+      const zonesData = zonesResponse.data?.data || zonesResponse.data;
+      if (zonesSuccess && zonesData && Array.isArray(zonesData) && zonesData.length > 0) {
+        const validZones = zonesData as Array<{ zone_id: number; zone_name: string }>;
         console.log(`[PATHAO] Valid zones:`, JSON.stringify(validZones));
 
         // ALWAYS use first zone from API - guaranteed to be valid
@@ -445,10 +447,16 @@ export class PathaoService {
     const totalWeight = order.items.length * 0.5; // kg
 
     try {
+      // Ensure address is at least 10 characters for Pathao
+      let paddedAddress = streetAddress;
+      if (paddedAddress && paddedAddress.length < 10) {
+        paddedAddress = `${paddedAddress}, Bangladesh`;
+      }
+
       const result = await this.createConsignment(orderId, {
         customerName: address?.name || order.guestName || 'Customer',
         customerPhone: phone,
-        customerAddress: streetAddress,
+        customerAddress: paddedAddress,
         city: String(cityId),
         zone: String(zoneId),
         weight: totalWeight,
