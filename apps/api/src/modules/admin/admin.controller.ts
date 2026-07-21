@@ -219,7 +219,7 @@ export class AdminSeedController {
 
         // Create variants with sizes
         for (const variant of product.variants) {
-          const stock = Object.values(variant.sizes).reduce((a: number, b: number) => a + Number(b), 0);
+          const stock = Number(Object.values(variant.sizes).reduce((a: number, b: number) => a + Number(b), 0));
 
           if (stock > 0) {
             // Create a variant for each size
@@ -231,11 +231,10 @@ export class AdminSeedController {
                     sku: `${variant.sku_prefix}-${size}`,
                     size: size,
                     color: variant.wash_name,
-                    colorHex: variant.wash_hex,
-                    price: variant.special_price_bdt || variant.price_bdt,
+                    colorHex: variant.wash_hex || null,
+                    price: Number(variant.special_price_bdt || variant.price_bdt) || null,
                     stock: Number(qty),
                     images: variant.source_image ? [variant.source_image] : [],
-                    isActive: variant.status === 'enabled',
                   }
                 });
               }
