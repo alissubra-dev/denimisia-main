@@ -86,7 +86,7 @@ export default function CheckoutPage() {
   // Shipping calculation
   const subtotal = total();
   const isDhaka = city.toLowerCase().includes('dhaka');
-  const shippingCost = subtotal >= 1500 ? 0 : isDhaka ? 80 : 120;
+  const shippingCost = subtotal >= 1500 ? 0 : isDhaka ? 70 : 120;
   const grandTotal = subtotal + shippingCost;
 
   if (status === 'loading') {
