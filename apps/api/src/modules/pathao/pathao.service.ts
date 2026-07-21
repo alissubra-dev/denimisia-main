@@ -425,15 +425,18 @@ export class PathaoService {
       // Check for success - Pathao returns either "success": true OR "type": "success"
       const zonesSuccess = zonesResponse.success === true || zonesResponse.type === 'success' || zonesResponse.code === 200;
 
-      // Pathao returns data in nested format: data.data
-      const zonesData = zonesResponse.data?.data || zonesResponse.data;
+      // Pathao returns data in nested format: data.data - handle both cases
+      const rawData = zonesResponse.data as Record<string, unknown> | undefined;
+      const zonesData = rawData && typeof rawData === 'object' && 'data' in rawData
+        ? (rawData.data as Array<{ zone_id: number; zone_name: string }>)
+        : (rawData as Array<{ zone_id: number; zone_name: string }>);
+
       if (zonesSuccess && zonesData && Array.isArray(zonesData) && zonesData.length > 0) {
-        const validZones = zonesData as Array<{ zone_id: number; zone_name: string }>;
-        console.log(`[PATHAO] Valid zones:`, JSON.stringify(validZones));
+        console.log(`[PATHAO] Valid zones:`, JSON.stringify(zonesData));
 
         // ALWAYS use first zone from API - guaranteed to be valid
-        zoneId = validZones[0].zone_id;
-        console.log(`[PATHAO] Using zone from API: ${validZones[0].zone_name} (ID: ${zoneId})`);
+        zoneId = zonesData[0].zone_id;
+        console.log(`[PATHAO] Using zone from API: ${zonesData[0].zone_name} (ID: ${zoneId})`);
       } else {
         console.log(`[PATHAO] Using hardcoded zone: ${zoneId}`);
       }
