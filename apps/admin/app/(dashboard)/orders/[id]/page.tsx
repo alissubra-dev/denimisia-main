@@ -429,7 +429,7 @@ export default function OrderDetailPage() {
       const addr = order.shippingAddress;
       const customerName = escapeHtml(getCustomerName(order));
       const customerEmail = escapeHtml(getCustomerEmail(order));
-      const addrLine1 = addr ? escapeHtml(addr.address ?? addr.street ?? '') : '';
+      const addrLine1 = addr ? escapeHtml(addr.address ?? addr.street ?? addr.line1 ?? '') : '';
       const addrLine2 = addr
         ? escapeHtml(
             [addr.city, addr.state ?? addr.division, addr.postalCode ?? addr.zipCode]
@@ -836,8 +836,8 @@ export default function OrderDetailPage() {
                 {addr.name && (
                   <p className="font-semibold">{addr.name}</p>
                 )}
-                {(addr.address ?? addr.street) && (
-                  <p className="text-secondary">{addr.address ?? addr.street}</p>
+                {(addr.address ?? addr.street ?? addr.line1) && (
+                  <p className="text-secondary">{addr.address ?? addr.street ?? addr.line1}</p>
                 )}
                 <p className="text-secondary">
                   {[
