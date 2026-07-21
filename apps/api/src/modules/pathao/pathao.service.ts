@@ -146,7 +146,8 @@ export class PathaoService {
   async getZones(cityId: number): Promise<PathaoResponse<Record<string, unknown>[]>> {
     const token = await this.authenticate();
 
-    const response = await fetch(`${this.config.baseUrl}/aladdin/api/v1/zones?city_id=${cityId}`, {
+    // Use the correct endpoint: /cities/{cityId}/zone-list
+    const response = await fetch(`${this.config.baseUrl}/aladdin/api/v1/cities/${cityId}/zone-list`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -383,15 +384,15 @@ export class PathaoService {
     }
 
     // Get city from address - default to Dhaka
-    let cityId = 3; // Dhaka - default city
-    let zoneId = 9; // Dhaka East - known valid zone for Dhaka city
+    let cityId = 1; // Dhaka - default city (Pathao uses 1 for Dhaka)
+    let zoneId = 8; // Valid zone for Dhaka (will fetch from API if possible)
 
     // Try to get city ID from address (could be name like "Dhaka" or number)
     if (address?.city) {
       const cityStr = String(address.city).toLowerCase();
-      // Map city names to IDs
-      if (cityStr.includes('dhaka')) cityId = 3;
-      else if (cityStr.includes('chittagong') || cityStr.includes('chattogram')) cityId = 1;
+      // Map city names to IDs (Pathao's city IDs)
+      if (cityStr.includes('dhaka')) cityId = 1;
+      else if (cityStr.includes('chittagong') || cityStr.includes('chattogram')) cityId = 3;
       else if (cityStr.includes('khulna')) cityId = 4;
       else if (cityStr.includes('barisal') || cityStr.includes('barisal')) cityId = 2;
       else if (cityStr.includes('sylhet')) cityId = 6;
