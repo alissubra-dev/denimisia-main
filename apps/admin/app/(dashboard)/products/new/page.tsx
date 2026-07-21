@@ -854,8 +854,8 @@ export default function NewProductPage() {
 
             <div className="space-y-5">
               <PlacementToggle
-                label="Feature on Storefront"
-                description='Surfaces this piece on the homepage "Best Sellers" tab.'
+                label="Best Seller"
+                description='Surfaces this piece on the homepage Best Sellers tab.'
                 checked={isFeatured}
                 onChange={setIsFeatured}
               />

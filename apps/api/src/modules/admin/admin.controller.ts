@@ -1,8 +1,10 @@
-import { Controller, Post, UseGuards } from '@nestjs/common';
+import { Controller, Post, UseGuards, BadRequestException } from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles, Role } from '../../common/decorators/roles.decorator';
 import { PrismaService } from '../prisma/prisma.service';
+import * as fs from 'fs';
+import * as path from 'path';
 
 const WOMEN_LANDMARKS = {
   collar: { y: 68 },
@@ -119,5 +121,139 @@ export class AdminSeedController {
     await this.seedSilhouettes();
     await this.seedCategories();
     return { success: true, message: 'Database seeded' };
+  }
+
+  // Import products from catalog data
+  @Post('import-catalog')
+  async importProducts() {
+    // Map hero_category to category names
+    const CATEGORY_MAP: Record<string, string> = {
+      'wide-leg': 'Wide-Leg',
+      'baggy': 'Baggy Fit',
+      'designed': 'Designed',
+      'boyfriend': 'Boyfriend',
+      'straight': 'Straight Leg',
+      'cargo': 'Cargo',
+      'flared': 'Flared',
+      'bootcut': 'Bootcut',
+      'high-waisted': 'High-Waisted',
+      'distressed': 'Distressed',
+      'barrel': 'Barrel Fit',
+    };
+
+    // Get the data file path
+    const dataPath = path.join(process.cwd(), '../../data/catalog/output/products.json');
+
+    if (!fs.existsSync(dataPath)) {
+      throw new BadRequestException('Products data file not found');
+    }
+
+    const products = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
+    console.log(`Found ${products.length} products to import`);
+
+    // Get or create default category
+    let defaultCategory = await this.prisma.category.findFirst({
+      where: { name: { equals: 'Jeans', mode: 'insensitive' } }
+    });
+
+    if (!defaultCategory) {
+      defaultCategory = await this.prisma.category.create({
+        data: {
+          name: 'Jeans',
+          slug: 'jeans',
+          description: 'Jeans category',
+        }
+      });
+    }
+
+    let imported = 0;
+    let skipped = 0;
+
+    for (const product of products) {
+      try {
+        // Check if product already exists
+        const existing = await this.prisma.product.findUnique({
+          where: { slug: product.slug }
+        });
+
+        if (existing) {
+          skipped++;
+          continue;
+        }
+
+        // Get or create category
+        const categoryName = CATEGORY_MAP[product.hero_category] || 'Jeans';
+        let category = await this.prisma.category.findFirst({
+          where: { name: { equals: categoryName, mode: 'insensitive' } }
+        });
+
+        if (!category) {
+          category = await this.prisma.category.create({
+            data: {
+              name: categoryName,
+              slug: categoryName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+              description: `${categoryName} category`,
+            }
+          });
+        }
+
+        // Determine price
+        const basePrice = product.variants[0]?.special_price_bdt || product.variants[0]?.price_bdt || 0;
+        const compareAtPrice = product.variants[0]?.special_price_bdt ? product.variants[0]?.price_bdt : null;
+
+        // Create product
+        const createdProduct = await this.prisma.product.create({
+          data: {
+            name: product.title,
+            slug: product.slug,
+            description: `${product.title} - ${product.fabric || ''}`.trim(),
+            price: basePrice,
+            compareAtPrice: compareAtPrice,
+            images: product.variants.map(v => v.source_image).filter(Boolean),
+            tags: product.tags,
+            type: 'DENIM',
+            isActive: true,
+            categoryId: category.id || defaultCategory.id,
+          }
+        });
+
+        // Create variants with sizes
+        for (const variant of product.variants) {
+          const stock = Object.values(variant.sizes).reduce((a: number, b: number) => a + b, 0);
+
+          if (stock > 0) {
+            // Create a variant for each size
+            for (const [size, qty] of Object.entries(variant.sizes)) {
+              if (qty > 0) {
+                await this.prisma.productVariant.create({
+                  data: {
+                    productId: createdProduct.id,
+                    sku: `${variant.sku_prefix}-${size}`,
+                    size: size,
+                    color: variant.wash_name,
+                    colorHex: variant.wash_hex,
+                    price: variant.special_price_bdt || variant.price_bdt,
+                    stock: qty,
+                    images: variant.source_image ? [variant.source_image] : [],
+                    isActive: variant.status === 'enabled',
+                  }
+                });
+              }
+            }
+          }
+        }
+
+        imported++;
+        console.log(`Imported: ${product.title}`);
+
+      } catch (error) {
+        console.error(`Error importing ${product.title}:`, error);
+      }
+    }
+
+    return {
+      success: true,
+      message: `Import complete: ${imported} products imported, ${skipped} skipped`
+    };
   }
 }

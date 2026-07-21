@@ -39,6 +39,22 @@ export default function CategoriesPage() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  const importProducts = async () => {
+    if (!token) return;
+    if (!confirm('This will import products from catalog data. Continue?')) return;
+
+    try {
+      const result = await adminFetch<{ success: boolean; message: string }>(
+        '/admin/seed/import-catalog',
+        { method: 'POST' },
+        token,
+      );
+      alert(result.message);
+    } catch (e) {
+      alert('Import failed: ' + (e instanceof Error ? e.message : 'Unknown error'));
+    }
+  };
+
   const load = useCallback(async () => {
     if (!token) return;
     setLoading(true);
@@ -88,6 +104,9 @@ export default function CategoriesPage() {
       actions={
         <PrimaryButton icon="add" onClick={() => setModalOpen(true)}>
           New Category
+        </PrimaryButton>
+        <PrimaryButton icon="upload" onClick={importProducts} className="ml-2">
+          Import Products
         </PrimaryButton>
       }
     >
