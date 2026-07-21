@@ -366,13 +366,15 @@ export class PathaoService {
       phone?: string;
       address?: string;
       street?: string;
+      line1?: string;
       city?: string;
+      state?: string;
       zone?: string;
     };
 
-    // Try multiple sources for phone and address
+    // Try multiple sources for phone and address - check all possible fields
     const phone = address?.phone || order.guestPhone;
-    const streetAddress = address?.address || address?.street || 'Address not provided';
+    const streetAddress = address?.address || address?.street || address?.line1 || 'Address not provided';
 
     if (!phone || !streetAddress) {
       const missing = !phone ? 'phone' : 'address';
@@ -380,21 +382,32 @@ export class PathaoService {
       throw new Error(`Cannot create shipment: missing ${missing}. Please update order shipping details.`);
     }
 
-    // Get city and zone from address - default to Dhaka if not set
+    // Get city from address - default to Dhaka
     let cityId = 3; // Dhaka - default city
-    let zoneId = 14; // Dhaka North - default zone (known valid for Dhaka)
+    let zoneId = 9; // Dhaka East - known valid zone for Dhaka city
 
-    // Try to get from address if available
+    // Try to get city ID from address (could be name like "Dhaka" or number)
     if (address?.city) {
-      const parsedCity = parseInt(address.city);
-      if (!isNaN(parsedCity)) cityId = parsedCity;
+      const cityStr = String(address.city).toLowerCase();
+      // Map city names to IDs
+      if (cityStr.includes('dhaka')) cityId = 3;
+      else if (cityStr.includes('chittagong') || cityStr.includes('chattogram')) cityId = 1;
+      else if (cityStr.includes('khulna')) cityId = 4;
+      else if (cityStr.includes('barisal') || cityStr.includes('barisal')) cityId = 2;
+      else if (cityStr.includes('sylhet')) cityId = 6;
+      else {
+        const parsedCity = parseInt(address.city);
+        if (!isNaN(parsedCity)) cityId = parsedCity;
+      }
     }
+
+    // Try to get zone from address
     if (address?.zone) {
       const parsedZone = parseInt(address.zone);
       if (!isNaN(parsedZone)) zoneId = parsedZone;
     }
 
-    console.log(`[PATHAO] Starting: cityId=${cityId}, zoneId=${zoneId}`);
+    console.log(`[PATHAO] Starting: cityId=${cityId}, zoneId=${zoneId}, address.city=${address?.city}, address.state=${address?.state}`);
 
     // Re-authenticate to get fresh token (zones API might need fresh one)
     try {
@@ -411,10 +424,10 @@ export class PathaoService {
         zoneId = validZones[0].zone_id;
         console.log(`[PATHAO] Using zone: ${validZones[0].zone_name} (ID: ${zoneId})`);
       } else {
-        console.log(`[PATHAO] Using fallback zone: ${zoneId}`);
+        console.log(`[PATHAO] Using hardcoded zone: ${zoneId}`);
       }
     } catch (e) {
-      console.log(`[PATHAO] Zone fetch failed, using fallback: ${e}`);
+      console.log(`[PATHAO] Zone fetch failed, using hardcoded zone ${zoneId}: ${e}`);
     }
 
     console.log(`[PATHAO] Final: cityId=${cityId}, zoneId=${zoneId}`);
