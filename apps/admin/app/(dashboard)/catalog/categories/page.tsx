@@ -102,12 +102,14 @@ export default function CategoriesPage() {
       description="Organize the catalog into an editorial taxonomy."
       breadcrumbs={[{ label: 'Catalog' }, { label: 'Categories' }]}
       actions={
-        <PrimaryButton icon="add" onClick={() => setModalOpen(true)}>
-          New Category
-        </PrimaryButton>
-        <PrimaryButton icon="upload" onClick={importProducts} className="ml-2">
-          Import Products
-        </PrimaryButton>
+        <>
+          <PrimaryButton icon="add" onClick={() => setModalOpen(true)}>
+            New Category
+          </PrimaryButton>
+          <PrimaryButton icon="upload" onClick={importProducts} className="ml-2">
+            Import Products
+          </PrimaryButton>
+        </>
       }
     >
       {error && <Banner tone="error" message={error} />}
