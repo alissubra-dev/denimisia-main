@@ -398,24 +398,23 @@ export default function CheckoutPage() {
 
           <div>
             <label htmlFor="phone" className="mb-1.5 block text-xs text-muted">Phone</label>
-              <input
-                id="phone"
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                required
-                autoComplete="tel"
-                placeholder="01XXXXXXXXX"
-                className={`w-full border bg-transparent px-4 py-3 text-sm text-ink outline-none focus:border-ink ${
-                  phone && !isPhoneValid ? 'border-error' : 'border-border'
-                }`}
-              />
-              {phone && !isPhoneValid && (
-                <p className="mt-1 text-[11px] text-error">
-                  Enter a valid BD phone number (10–11 digits).
-                </p>
-              )}
-            </div>
+            <input
+              id="phone"
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              required
+              autoComplete="tel"
+              placeholder="01XXXXXXXXX"
+              className={`w-full border bg-transparent px-4 py-3 text-sm text-ink outline-none focus:border-ink ${
+                phone && !isPhoneValid ? 'border-error' : 'border-border'
+              }`}
+            />
+            {phone && !isPhoneValid && (
+              <p className="mt-1 text-[11px] text-error">
+                Enter a valid BD phone number (10–11 digits).
+              </p>
+            )}
           </div>
 
           <div>
