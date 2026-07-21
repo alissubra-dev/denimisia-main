@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { adminFetch } from '@/lib/api';
+import { adminPost } from '@/lib/api';
 import { PageShell } from '@/components/page-shell';
 import {
   Banner,
@@ -44,9 +44,9 @@ export default function CategoriesPage() {
     if (!confirm('This will import products from catalog data. Continue?')) return;
 
     try {
-      const result = await adminFetch<{ success: boolean; message: string }>(
+      const result = await adminPost<{ success: boolean; message: string }>(
         '/admin/seed/import-catalog',
-        { method: 'POST' },
+        {},
         token,
       );
       alert(result.message);
