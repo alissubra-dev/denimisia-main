@@ -257,7 +257,10 @@ export class PathaoService {
 
     this.logger.log(`Pathao response: ${JSON.stringify(result)}`);
 
-    if (!response.ok || !result.success) {
+    // Check for success - Pathao returns either "success": true OR "type": "success"
+    const isSuccess = response.ok && (result.success === true || result.type === 'success' || result.code === 200);
+
+    if (!isSuccess) {
       this.logger.error(`Pathao consignment creation failed: ${JSON.stringify(result)}`);
       const errorMsg = String(result.message || (result.errors ? JSON.stringify(result.errors) : 'Failed to create consignment'));
       throw new Error(errorMsg);
@@ -417,13 +420,16 @@ export class PathaoService {
       const zonesResponse = await this.getZones(cityId);
       console.log(`[PATHAO] Zones response:`, JSON.stringify(zonesResponse).substring(0, 500));
 
-      if (zonesResponse.success && zonesResponse.data && zonesResponse.data.length > 0) {
+      // Check for success - Pathao returns either "success": true OR "type": "success"
+      const zonesSuccess = zonesResponse.success === true || zonesResponse.type === 'success' || zonesResponse.code === 200;
+
+      if (zonesSuccess && zonesResponse.data && zonesResponse.data.length > 0) {
         const validZones = zonesResponse.data as Array<{ zone_id: number; zone_name: string }>;
         console.log(`[PATHAO] Valid zones:`, JSON.stringify(validZones));
 
         // ALWAYS use first zone from API - guaranteed to be valid
         zoneId = validZones[0].zone_id;
-        console.log(`[PATHAO] Using zone: ${validZones[0].zone_name} (ID: ${zoneId})`);
+        console.log(`[PATHAO] Using zone from API: ${validZones[0].zone_name} (ID: ${zoneId})`);
       } else {
         console.log(`[PATHAO] Using hardcoded zone: ${zoneId}`);
       }
