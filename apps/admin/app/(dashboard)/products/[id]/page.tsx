@@ -396,20 +396,26 @@ export default function EditProductPage() {
                 body: JSON.stringify(variantData),
               });
             } catch (err) {
-              // Ignore conflict errors - variant might already exist from previous attempts
-              console.log(`Variant ${builderColor.name}/${sizeEntry.label}: ${err instanceof Error ? err.message : 'unknown'}`);
+              // Show error but continue with save
+              const msg = `Failed to create variant for ${builderColor.name} / ${sizeEntry.label}: ${err instanceof Error ? err.message : 'Unknown error'}`;
+              console.error(msg);
+              // Don't redirect on variant conflict errors - just show the error
+              if (err instanceof Error && err.message.includes('Conflict')) {
+                setError(msg);
+              }
             }
           }
         }
       }
 
-      // Always continue even if there were variant errors - product was updated
+      // If there was a conflict error, don't redirect
+      if (!error) {
+        // Revalidate storefront cache so changes appear immediately
+        await revalidateAllProductPages(currentSlug);
 
-      // Revalidate storefront cache so changes appear immediately
-      await revalidateAllProductPages(currentSlug);
-
-      // Force full page reload to ensure fresh data is loaded
-      window.location.href = '/products';
+        // Force full page reload to ensure fresh data is loaded
+        window.location.href = '/products';
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to update product');
     } finally {
