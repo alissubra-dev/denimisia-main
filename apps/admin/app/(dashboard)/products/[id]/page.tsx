@@ -319,10 +319,6 @@ export default function EditProductPage() {
       const currentSlug = slug || slugify(name);
       let hasVariantError = false;
 
-      console.log('=== DEBUG VARIANT SAVE ===');
-      console.log('Original variants:', variants.map(v => ({ id: v.id, color: v.color, size: v.size })));
-      console.log('Builder colors:', JSON.stringify(variantsBuilder.colors.map(c => ({ name: c.name, originalName: c.originalName, sizes: c.sizes.map(s => ({ label: s.label })) })), null, 2));
-
       // Build a map of original variants for lookup
       // Key: lowercase "color|size" -> Variant
       const originalVariantMap = new Map<string, Variant>();
@@ -333,7 +329,6 @@ export default function EditProductPage() {
           originalVariantMap.set(`${colorName}|${sizeName}`, v);
         }
       }
-      console.log('Original variant map keys:', Array.from(originalVariantMap.keys()));
 
       // Update existing variants with their new values
       for (const builderColor of variantsBuilder.colors) {
@@ -342,7 +337,6 @@ export default function EditProductPage() {
         // Use originalName to look up existing variants (in case color name was changed)
         // If originalName exists, use it; otherwise use the current name
         const lookupName = builderColor.originalName || builderColor.name;
-        console.log(`Processing color: ${builderColor.name}, lookupName: ${lookupName}`);
 
         // For each size in this color, update or create the variant
         for (const sizeEntry of builderColor.sizes) {
@@ -350,9 +344,7 @@ export default function EditProductPage() {
 
           // Look up existing variant using the ORIGINAL color name
           const key = `${lookupName.toLowerCase()}|${sizeEntry.label.toLowerCase()}`;
-          console.log(`  Looking up key: "${key}"`);
           const existingVariant = originalVariantMap.get(key);
-          console.log(`  Found existing:`, existingVariant ? existingVariant.id : 'NO');
 
           if (existingVariant) {
             // Update existing variant - send all relevant fields including color and colorHex
@@ -383,8 +375,6 @@ export default function EditProductPage() {
             const colorCode = builderColor.name.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3).padEnd(2, 'X');
             const sizeCode = sizeEntry.label.replace(/[^A-Za-z0-9]/g, '');
 
-            console.log(`  Creating NEW variant: color=${builderColor.name}, size=${sizeEntry.label}, colorCode=${colorCode}, sizeCode=${sizeCode}`);
-
             try {
               const variantData: Record<string, unknown> = {
                 sku: `${slugCode}-${colorCode}-${sizeCode}`,
@@ -399,17 +389,14 @@ export default function EditProductPage() {
                 variantData.images = builderColor.images;
               }
 
-              console.log(`  POST variant data:`, JSON.stringify(variantData));
-
               await adminFetch(`/products/${productId}/variants`, token, {
                 method: 'POST',
                 body: JSON.stringify(variantData),
               });
             } catch (err) {
-              // If we get a 409 Conflict, it means the variant already exists
-              // Try to find and update it instead
-              if (err instanceof Error && err.message.includes('409')) {
-                console.log(`Variant exists, trying to update: ${builderColor.name} / ${sizeEntry.label}`);
+              // If we get a 409 Conflict, try to find and update the existing variant
+              if (err instanceof Error && (err.message.includes('409') || err.message.includes('Conflict'))) {
+                // Try to find by new name
                 const key = `${builderColor.name.toLowerCase()}|${sizeEntry.label.toLowerCase()}`;
                 const existingByNewName = originalVariantMap.get(key);
 
@@ -425,13 +412,11 @@ export default function EditProductPage() {
                       method: 'PATCH',
                       body: JSON.stringify(updateData),
                     });
-                    console.log(`Successfully updated existing variant ${existingByNewName.id}`);
                   } catch (updateErr) {
                     console.error(`Failed to update existing variant: ${updateErr}`);
                     hasVariantError = true;
                   }
                 } else {
-                  console.error(`Could not find existing variant for key: ${key}`);
                   hasVariantError = true;
                 }
               } else {
