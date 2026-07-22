@@ -321,7 +321,7 @@ export default function EditProductPage() {
 
       console.log('=== DEBUG VARIANT SAVE ===');
       console.log('Original variants:', variants.map(v => ({ id: v.id, color: v.color, size: v.size })));
-      console.log('Builder colors:', variantsBuilder.colors.map(c => ({ name: c.name, originalName: c.originalName, sizes: c.sizes.map(s => ({ label: s.label })) })));
+      console.log('Builder colors:', JSON.stringify(variantsBuilder.colors.map(c => ({ name: c.name, originalName: c.originalName, sizes: c.sizes.map(s => ({ label: s.label })) })), null, 2));
 
       // Build a map of original variants for lookup
       // Key: lowercase "color|size" -> Variant

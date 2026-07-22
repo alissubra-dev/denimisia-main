@@ -185,8 +185,11 @@ export function VariantsBuilder({
 
     // Preserve originalName if name is being changed and originalName is not set yet
     // This tracks the original color name from the database for proper variant updates
+    // IMPORTANT: We want to preserve the ORIGINAL name from database, not the current name
     if (patch.name && !color.originalName && color.name) {
-      patch.originalName = color.name;
+      // If color.originalName is already set, keep it (it was already changed once)
+      // If originalName is not set, this is the first change - preserve current name as original
+      patch.originalName = color.originalName || color.name;
     }
 
     // If images are being updated and there's an existing variant for this color, save them
