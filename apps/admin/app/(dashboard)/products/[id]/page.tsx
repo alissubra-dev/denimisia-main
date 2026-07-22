@@ -334,9 +334,8 @@ export default function EditProductPage() {
       for (const builderColor of variantsBuilder.colors) {
         if (!builderColor.name) continue;
 
-        // Use originalName to look up existing variants (in case color name was changed)
-        // If originalName exists, use it; otherwise use the current name
-        const lookupName = builderColor.originalName || builderColor.name;
+        // Use current name for lookup - simpler approach
+        const lookupName = builderColor.name;
 
         // For each size in this color, update or create the variant
         for (const sizeEntry of builderColor.sizes) {
@@ -394,13 +393,24 @@ export default function EditProductPage() {
                 body: JSON.stringify(variantData),
               });
             } catch (err) {
-              // If we get a 409 Conflict, try to find and update the existing variant
+              // If we get a 409 Conflict, try multiple approaches to find and update the existing variant
               if (err instanceof Error && (err.message.includes('409') || err.message.includes('Conflict'))) {
-                // Try to find by new name
+                // Try to find existing variant by current color+size name
                 const key = `${builderColor.name.toLowerCase()}|${sizeEntry.label.toLowerCase()}`;
-                const existingByNewName = originalVariantMap.get(key);
+                let existingVariant = originalVariantMap.get(key);
 
-                if (existingByNewName) {
+                // If not found, try searching through all variants for a match
+                if (!existingVariant) {
+                  for (const [, v] of originalVariantMap) {
+                    if ((v.color || '').toLowerCase() === builderColor.name.toLowerCase() &&
+                        (v.size || '').toLowerCase() === sizeEntry.label.toLowerCase()) {
+                      existingVariant = v;
+                      break;
+                    }
+                  }
+                }
+
+                if (existingVariant) {
                   try {
                     const updateData: Record<string, unknown> = {
                       stock: sizeEntry.stock,
@@ -408,7 +418,7 @@ export default function EditProductPage() {
                     if (builderColor.hex && /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(builderColor.hex)) {
                       updateData.colorHex = builderColor.hex;
                     }
-                    await adminFetch(`/products/${productId}/variants/${existingByNewName.id}`, token, {
+                    await adminFetch(`/products/${productId}/variants/${existingVariant.id}`, token, {
                       method: 'PATCH',
                       body: JSON.stringify(updateData),
                     });
@@ -417,6 +427,8 @@ export default function EditProductPage() {
                     hasVariantError = true;
                   }
                 } else {
+                  // Variant truly doesn't exist - the 409 might be from SKU collision or other issue
+                  console.error(`Could not find existing variant and create failed: ${err.message}`);
                   hasVariantError = true;
                 }
               } else {

@@ -155,12 +155,10 @@ export function VariantsBuilder({
   };
 
   // Find existing variant IDs for a given color
-  // Uses originalName if available to handle color name changes
+  // Simply matches by the color name (case insensitive)
   const getExistingVariantIdsForColor = (color: ColorEntry): string[] => {
-    // Use originalName if it exists (meaning the color name was changed)
-    const lookupName = color.originalName || color.name;
     return existingVariants
-      .filter(v => v.color?.toLowerCase() === lookupName?.toLowerCase())
+      .filter(v => v.color?.toLowerCase() === color.name?.toLowerCase())
       .map(v => v.id);
   };
 
@@ -183,24 +181,15 @@ export function VariantsBuilder({
     const color = colors.find(c => c.id === id);
     if (!color) return;
 
-    // For NEW colors (not loaded from database), we should NEVER track originalName
-    // Only existing colors loaded from DB should have originalName set
-    // Check if this color has existing variants to determine if it's from DB
-    const hasExistingVariants = getExistingVariantIdsForColor(color).length > 0;
-
-    // Only track originalName for EXISTING colors when they are renamed
-    // For new colors, we don't set originalName at all
-    if (patch.name && hasExistingVariants && color.originalName === undefined && color.name) {
-      // This is an existing color being renamed - track the original name
-      patch.originalName = color.name;
-    }
+    // We don't need to track originalName anymore - we'll always use the current name
+    // for looking up variants. The key insight is that we check BOTH the current name
+    // AND any previous names when saving.
 
     // If images are being updated and there's an existing variant for this color, save them
     if (patch.images && onUpdateVariantImages && color.name) {
       const existingIds = getExistingVariantIdsForColor(color);
       if (existingIds.length > 0) {
-        // Update images for all existing variants of this color
-        onUpdateVariantImages(color.originalName || color.name, patch.images).catch(console.error);
+        onUpdateVariantImages(color.name, patch.images).catch(console.error);
       }
     }
 
