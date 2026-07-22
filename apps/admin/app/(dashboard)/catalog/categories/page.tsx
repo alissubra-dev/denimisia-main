@@ -55,6 +55,22 @@ export default function CategoriesPage() {
     }
   };
 
+  const clearProducts = async () => {
+    if (!token) return;
+    if (!confirm('This will DELETE all products and variants. This cannot be undone. Continue?')) return;
+
+    try {
+      const result = await adminPost<{ success: boolean; message: string }>(
+        '/admin/seed/clear-products',
+        {},
+        token,
+      );
+      alert(result.message);
+    } catch (e) {
+      alert('Clear failed: ' + (e instanceof Error ? e.message : 'Unknown error'));
+    }
+  };
+
   const load = useCallback(async () => {
     if (!token) return;
     setLoading(true);
@@ -109,6 +125,11 @@ export default function CategoriesPage() {
           <span className="ml-2 inline-block">
             <PrimaryButton icon="upload" onClick={importProducts}>
               Import Products
+            </PrimaryButton>
+          </span>
+          <span className="ml-2 inline-block">
+            <PrimaryButton icon="delete" onClick={clearProducts}>
+              Clear Products
             </PrimaryButton>
           </span>
         </>

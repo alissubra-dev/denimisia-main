@@ -255,4 +255,19 @@ export class AdminSeedController {
       message: `Import complete: ${imported} products imported, ${skipped} skipped`
     };
   }
+
+  // Clear all products and variants
+  @Post('clear-products')
+  async clearProducts() {
+    // Delete all product variants first (due to foreign key)
+    await this.prisma.productVariant.deleteMany({});
+
+    // Delete all products
+    await this.prisma.product.deleteMany({});
+
+    return {
+      success: true,
+      message: 'All products and variants cleared'
+    };
+  }
 }
