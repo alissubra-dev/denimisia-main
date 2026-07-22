@@ -21,6 +21,8 @@ export interface ColorEntry {
   /** Stable id so React keys + image uploaders don't lose state on reorder. */
   id: string;
   name: string;
+  /** Original name from the database - used to track variants when name changes */
+  originalName?: string;
   images: string[];
   /**
    * Optional hex (e.g. "#1B1B1B"). Used as the swatch fallback when the
@@ -153,9 +155,12 @@ export function VariantsBuilder({
   };
 
   // Find existing variant IDs for a given color
-  const getExistingVariantIdsForColor = (colorName: string): string[] => {
+  // Uses originalName if available to handle color name changes
+  const getExistingVariantIdsForColor = (color: ColorEntry): string[] => {
+    // Use originalName if it exists (meaning the color name was changed)
+    const lookupName = color.originalName || color.name;
     return existingVariants
-      .filter(v => v.color?.toLowerCase() === colorName?.toLowerCase())
+      .filter(v => v.color?.toLowerCase() === lookupName?.toLowerCase())
       .map(v => v.id);
   };
 
@@ -178,12 +183,18 @@ export function VariantsBuilder({
     const color = colors.find(c => c.id === id);
     if (!color) return;
 
+    // Preserve originalName if name is being changed and originalName is not set yet
+    // This tracks the original color name from the database for proper variant updates
+    if (patch.name && !color.originalName && color.name) {
+      patch.originalName = color.name;
+    }
+
     // If images are being updated and there's an existing variant for this color, save them
     if (patch.images && onUpdateVariantImages && color.name) {
-      const existingIds = getExistingVariantIdsForColor(color.name);
+      const existingIds = getExistingVariantIdsForColor(color);
       if (existingIds.length > 0) {
         // Update images for all existing variants of this color
-        onUpdateVariantImages(color.name, patch.images).catch(console.error);
+        onUpdateVariantImages(color.originalName || color.name, patch.images).catch(console.error);
       }
     }
 
@@ -198,7 +209,7 @@ export function VariantsBuilder({
 
     // If there are existing variants for this color, delete them via API
     if (onDeleteVariant && color.name) {
-      const existingIds = getExistingVariantIdsForColor(color.name);
+      const existingIds = getExistingVariantIdsForColor(color);
       for (const variantId of existingIds) {
         try {
           await onDeleteVariant(variantId);

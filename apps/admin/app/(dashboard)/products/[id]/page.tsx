@@ -89,7 +89,7 @@ function formatBdt(value: number): string {
 
 /** Convert API variants to VariantsBuilder format */
 function convertVariantsToBuilder(variants: Variant[]): VariantsBuilderValue {
-  const colorMap = new Map<string, { id: string; name: string; hex?: string; images: string[]; sizes: { id: string; label: string; stock: number }[] }>();
+  const colorMap = new Map<string, { id: string; name: string; originalName: string; hex?: string; images: string[]; sizes: { id: string; label: string; stock: number }[] }>();
 
   for (const v of variants) {
     const colorName = (v.color || '').trim();
@@ -99,6 +99,7 @@ function convertVariantsToBuilder(variants: Variant[]): VariantsBuilderValue {
       colorMap.set(colorName, {
         id: `color-${crypto.randomUUID()}`,
         name: colorName,
+        originalName: colorName, // Track original name for proper variant matching
         hex: v.colorHex || undefined,
         images: v.images || [],
         sizes: [],
@@ -312,78 +313,75 @@ export default function EditProductPage() {
       });
 
       // Now save/update variants - we need to handle this properly:
-      // 1. For colors that existed before, update their stock via PATCH
+      // 1. For colors that existed before, update their properties via PATCH
       // 2. For completely new colors, create new variants via POST
 
       const currentSlug = slug || slugify(name);
+      let hasVariantError = false;
 
-      // Update existing variants with their new stock values
+      // Build a map of original variants for lookup
+      // Key: lowercase "color|size" -> Variant
+      const originalVariantMap = new Map<string, Variant>();
+      for (const v of variants) {
+        const colorName = (v.color || '').trim().toLowerCase();
+        const sizeName = (v.size || '').trim().toLowerCase();
+        if (colorName && sizeName) {
+          originalVariantMap.set(`${colorName}|${sizeName}`, v);
+        }
+      }
+
+      // Update existing variants with their new values
       for (const builderColor of variantsBuilder.colors) {
         if (!builderColor.name) continue;
+
+        // Use originalName to look up existing variants (in case color name was changed)
+        // If originalName exists, use it; otherwise use the current name
+        const lookupName = builderColor.originalName || builderColor.name;
 
         // For each size in this color, update or create the variant
         for (const sizeEntry of builderColor.sizes) {
           if (!sizeEntry.label) continue;
 
-          // Check if this is an existing variant (has matching color and size)
-          // Use trim() to handle potential whitespace differences between API and builder
-          const existingVariant = variants.find(
-            v => (v.color || '').trim().toLowerCase() === builderColor.name.toLowerCase() &&
-                 (v.size || '').trim().toLowerCase() === sizeEntry.label.toLowerCase()
-          );
+          // Look up existing variant using the ORIGINAL color name
+          const key = `${lookupName.toLowerCase()}|${sizeEntry.label.toLowerCase()}`;
+          const existingVariant = originalVariantMap.get(key);
 
           if (existingVariant) {
-            // Update stock for existing variant
+            // Update existing variant - send all relevant fields including color and colorHex
             try {
-              await adminFetch(`/products/${productId}/variants/${existingVariant.id}`, token, {
-                method: 'PATCH',
-                body: JSON.stringify({ stock: sizeEntry.stock }),
-              });
-            } catch (err) {
-              // If PATCH fails, try to delete and recreate
-              try {
-                await adminFetch(`/products/${productId}/variants/${existingVariant.id}`, token, {
-                  method: 'DELETE',
-                });
-              } catch (deleteErr) {
-                // Ignore delete errors
-              }
-              // Now create new
-              const slugCode = currentSlug.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4).padEnd(2, 'X');
-              const colorCode = builderColor.name.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3).padEnd(2, 'X');
-              const sizeCode = sizeEntry.label.replace(/[^A-Za-z0-9]/g, '');
-              const variantData: Record<string, unknown> = {
-                sku: `${slugCode}-${colorCode}-${sizeCode}`,
-                size: sizeEntry.label,
-                color: builderColor.name,
+              const updateData: Record<string, unknown> = {
                 stock: sizeEntry.stock,
+                color: builderColor.name, // Send color name in case it changed
               };
+              // Only add colorHex if it has a valid hex value
               if (builderColor.hex && /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(builderColor.hex)) {
-                variantData.colorHex = builderColor.hex;
+                updateData.colorHex = builderColor.hex;
               }
               if (builderColor.images.length > 0) {
-                variantData.images = builderColor.images;
+                updateData.images = builderColor.images;
               }
-              await adminFetch(`/products/${productId}/variants`, token, {
-                method: 'POST',
-                body: JSON.stringify(variantData),
+
+              await adminFetch(`/products/${productId}/variants/${existingVariant.id}`, token, {
+                method: 'PATCH',
+                body: JSON.stringify(updateData),
               });
+            } catch (err) {
+              console.error(`Failed to update variant: ${err}`);
+              hasVariantError = true;
             }
           } else {
-            // Create new variant
+            // Create new variant (color/size combination that didn't exist before)
             const slugCode = currentSlug.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4).padEnd(2, 'X');
             const colorCode = builderColor.name.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3).padEnd(2, 'X');
             const sizeCode = sizeEntry.label.replace(/[^A-Za-z0-9]/g, '');
 
             try {
-              // Build variant data - only include colorHex if it has a valid value
               const variantData: Record<string, unknown> = {
                 sku: `${slugCode}-${colorCode}-${sizeCode}`,
                 size: sizeEntry.label,
                 color: builderColor.name,
                 stock: sizeEntry.stock,
               };
-              // Only add colorHex if it has a valid hex value
               if (builderColor.hex && /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(builderColor.hex)) {
                 variantData.colorHex = builderColor.hex;
               }
@@ -396,25 +394,22 @@ export default function EditProductPage() {
                 body: JSON.stringify(variantData),
               });
             } catch (err) {
-              // Show error but continue with save
-              const msg = `Failed to create variant for ${builderColor.name} / ${sizeEntry.label}: ${err instanceof Error ? err.message : 'Unknown error'}`;
-              console.error(msg);
-              // Don't redirect on variant conflict errors - just show the error
-              if (err instanceof Error && err.message.includes('Conflict')) {
-                setError(msg);
-              }
+              console.error(`Failed to create variant: ${err}`);
+              hasVariantError = true;
             }
           }
         }
       }
 
-      // If there was a conflict error, don't redirect
-      if (!error) {
+      // Only redirect if no errors occurred
+      if (!hasVariantError) {
         // Revalidate storefront cache so changes appear immediately
         await revalidateAllProductPages(currentSlug);
 
         // Force full page reload to ensure fresh data is loaded
         window.location.href = '/products';
+      } else {
+        setError('Some variants could not be saved. Please check the console for details.');
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to update product');
