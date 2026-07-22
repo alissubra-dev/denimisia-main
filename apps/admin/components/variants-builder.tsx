@@ -183,13 +183,16 @@ export function VariantsBuilder({
     const color = colors.find(c => c.id === id);
     if (!color) return;
 
-    // Preserve originalName if name is being changed and originalName is not set yet
-    // This tracks the original color name from the database for proper variant updates
-    // IMPORTANT: We want to preserve the ORIGINAL name from database, not the current name
-    if (patch.name && !color.originalName && color.name) {
-      // If color.originalName is already set, keep it (it was already changed once)
-      // If originalName is not set, this is the first change - preserve current name as original
-      patch.originalName = color.originalName || color.name;
+    // For NEW colors (not loaded from database), we should NEVER track originalName
+    // Only existing colors loaded from DB should have originalName set
+    // Check if this color has existing variants to determine if it's from DB
+    const hasExistingVariants = getExistingVariantIdsForColor(color).length > 0;
+
+    // Only track originalName for EXISTING colors when they are renamed
+    // For new colors, we don't set originalName at all
+    if (patch.name && hasExistingVariants && color.originalName === undefined && color.name) {
+      // This is an existing color being renamed - track the original name
+      patch.originalName = color.name;
     }
 
     // If images are being updated and there's an existing variant for this color, save them

@@ -383,6 +383,8 @@ export default function EditProductPage() {
             const colorCode = builderColor.name.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3).padEnd(2, 'X');
             const sizeCode = sizeEntry.label.replace(/[^A-Za-z0-9]/g, '');
 
+            console.log(`  Creating NEW variant: color=${builderColor.name}, size=${sizeEntry.label}, colorCode=${colorCode}, sizeCode=${sizeCode}`);
+
             try {
               const variantData: Record<string, unknown> = {
                 sku: `${slugCode}-${colorCode}-${sizeCode}`,
@@ -396,6 +398,8 @@ export default function EditProductPage() {
               if (builderColor.images.length > 0) {
                 variantData.images = builderColor.images;
               }
+
+              console.log(`  POST variant data:`, JSON.stringify(variantData));
 
               await adminFetch(`/products/${productId}/variants`, token, {
                 method: 'POST',
