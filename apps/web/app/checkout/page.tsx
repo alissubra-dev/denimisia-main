@@ -7,6 +7,7 @@ import { useSession } from 'next-auth/react';
 import { useCart } from '@/stores/cart';
 // Checkout uses the ৳ glyph (see lib/utils); aliased so call sites stay tidy.
 import { formatTaka as formatPrice } from '@/lib/utils';
+import { trackInitiateCheckout, trackPurchase } from '@/lib/meta-pixel';
 
 interface CheckoutProfile {
   id: string;
@@ -88,6 +89,21 @@ export default function CheckoutPage() {
   const isDhaka = city.toLowerCase().includes('dhaka');
   const shippingCost = subtotal >= 1500 ? 0 : isDhaka ? 70 : 130;
   const grandTotal = subtotal + shippingCost;
+
+  // Track InitiateCheckout when user visits checkout page with items
+  useEffect(() => {
+    if (items.length > 0) {
+      const cartItems = items.map((item) => ({
+        productId: item.productSlug,
+        quantity: item.qty,
+      }));
+      const currentSubtotal = total();
+      const currentIsDhaka = city.toLowerCase().includes('dhaka');
+      const currentShippingCost = currentSubtotal >= 1500 ? 0 : currentIsDhaka ? 70 : 130;
+      const currentGrandTotal = currentSubtotal + currentShippingCost;
+      trackInitiateCheckout(cartItems, currentGrandTotal);
+    }
+  }, [items, total, city]);
 
   if (status === 'loading') {
     return (
@@ -267,6 +283,13 @@ export default function CheckoutPage() {
         );
         return;
       }
+
+      // Track Purchase event before clearing cart (we need the items data)
+      const orderItems = items.map((item) => ({
+        productId: item.productSlug,
+        quantity: item.qty,
+      }));
+      trackPurchase(json.data.id, grandTotal, 'BDT', orderItems);
 
       clearCart();
       setOrderPlaced(json.data.id);

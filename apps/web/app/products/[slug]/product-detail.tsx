@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ChevronRight, Info, Plus, Truck } from 'lucide-react';
 import type { Product } from './page';
 import { useCart } from '@/stores/cart';
 import { formatPrice, cn } from '@/lib/utils';
+import { trackViewContent, trackAddToCart } from '@/lib/meta-pixel';
 import { ImageWithFallback } from '@/components/ui/image-with-fallback';
 import { SizeGuideModal } from '@/components/product/size-guide-modal';
 import { SizeAndFitModal } from '@/components/products/size-and-fit-modal';
@@ -22,6 +23,14 @@ interface ProductDetailProps {
 export function ProductDetail({ product }: ProductDetailProps) {
   const addItem = useCart((s) => s.addItem);
   const openCart = useCart((s) => s.openCart);
+
+  // Track ViewContent when product page loads
+  useEffect(() => {
+    const price = product.activeCampaign
+      ? product.activeCampaign.finalPrice
+      : Number(product.variants[0]?.price ?? product.price);
+    trackViewContent(product.slug, product.name, price);
+  }, [product]);
 
   // Get unique colors and sizes
   const colors = useMemo(
@@ -73,6 +82,12 @@ export function ProductDetail({ product }: ProductDetailProps) {
 
   const handleAddToCart = () => {
     if (!selectedVariant) return;
+
+    // Calculate price (same logic as addItem)
+    const itemPrice = product.activeCampaign
+      ? product.activeCampaign.finalPrice
+      : Number(selectedVariant.price ?? product.price);
+
     addItem({
       variantId: selectedVariant.id,
       productId: product.id,
@@ -81,16 +96,13 @@ export function ProductDetail({ product }: ProductDetailProps) {
       image: images[0] ?? '',
       color: selectedVariant.color,
       size: selectedVariant.size,
-      // variant.price is commonly null in this catalog; fall back to
-      // product.price and honour an active campaign so the cart stores the
-      // real unit price (same number the display shows and orders.service
-      // bills). Without this the cart/checkout showed ৳0 while the emailed
-      // invoice charged the full amount.
-      price: product.activeCampaign
-        ? product.activeCampaign.finalPrice
-        : Number(selectedVariant.price ?? product.price),
+      price: itemPrice,
       qty: 1,
     });
+
+    // Track AddToCart event
+    trackAddToCart(product.slug, itemPrice);
+
     openCart();
   };
 

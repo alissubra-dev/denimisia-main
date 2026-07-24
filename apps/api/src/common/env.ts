@@ -101,6 +101,10 @@ const envSchema = z.object({
 
   // Feature flags
   ENABLE_DOCS: z.enum(['0', '1']).default('0'),
+
+  // Meta Pixel + Conversions API (CAPI)
+  META_PIXEL_ID: z.string().optional(),
+  META_CONVERSIONS_API_ACCESS_TOKEN: z.string().optional(),
 });
 
 type Env = z.infer<typeof envSchema>;

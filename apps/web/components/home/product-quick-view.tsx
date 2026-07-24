@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Drawer } from 'vaul';
 import { X, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
+import { trackAddToCart, trackViewContent } from '@/lib/meta-pixel';
 import { ProductDescription } from '@/components/product/product-description';
 import { useIsMobile } from '@/lib/mobile/use-media-query';
 import { useCart } from '@/stores/cart';
@@ -207,6 +208,14 @@ function DesktopQuickView({ product, related, onClose }: ProductQuickViewProps) 
     );
   }, [full, swatches, selectedColour, selectedSize, sizes]);
 
+  // Track ViewContent when product data loads
+  useEffect(() => {
+    if (full && product) {
+      const price = Number(full.variants[0]?.price ?? product.price);
+      trackViewContent(product.slug, product.name, price);
+    }
+  }, [full, product]);
+
   const needsSize = sizes.length > 0 && !selectedSize;
   const outOfStock =
     selectedVariant !== null && selectedVariant.stock === 0;
@@ -232,6 +241,8 @@ function DesktopQuickView({ product, related, onClose }: ProductQuickViewProps) 
     const item = buildCartItem();
     if (!item) return;
     addItem(item);
+    // Track AddToCart event
+    trackAddToCart(item.productSlug, item.price);
     openCart();
     onClose();
   };
@@ -240,6 +251,8 @@ function DesktopQuickView({ product, related, onClose }: ProductQuickViewProps) 
     const item = buildCartItem();
     if (!item) return;
     addItem(item);
+    // Track AddToCart event
+    trackAddToCart(item.productSlug, item.price);
     onClose();
     router.push('/checkout');
   };
@@ -602,6 +615,14 @@ function MobileQuickView({ product, related, onClose }: ProductQuickViewProps) {
       ) ?? null
     );
   }, [full, swatches, selectedColour, selectedSize, sizes]);
+
+  // Track ViewContent when product data loads
+  useEffect(() => {
+    if (full && product) {
+      const price = Number(full.variants[0]?.price ?? product.price);
+      trackViewContent(product.slug, product.name, price);
+    }
+  }, [full, product]);
 
   const needsSize = sizes.length > 0 && !selectedSize;
   const outOfStock =

@@ -9,6 +9,7 @@ import { env } from './common/env';
 import { pinoConfig } from './common/logger';
 import { PrismaModule } from './modules/prisma/prisma.module';
 import { RedisModule } from './modules/redis/redis.module';
+import { MetaModule } from './modules/meta/meta.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { ProductsModule } from './modules/products/products.module';
@@ -51,6 +52,7 @@ import { AdminModule } from './modules/admin/admin.module';
     LoggerModule.forRoot(pinoConfig),
     PrismaModule,
     RedisModule,
+    MetaModule,
     AuthModule,
     UsersModule,
     ProductsModule,
