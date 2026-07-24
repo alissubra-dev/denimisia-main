@@ -24,21 +24,15 @@ export class MetaListener {
     }
 
     try {
-      // Fetch order details from database
+      // Fetch order details from database with proper includes
       const order = await this.prisma.order.findUnique({
         where: { id: event.orderId },
         include: {
           items: {
             include: {
-              variant: {
-                include: {
-                  product: true,
-                },
-              },
+              product: { select: { slug: true } },
             },
           },
-          shippingAddress: true,
-          user: true,
         },
       });
 
@@ -47,30 +41,79 @@ export class MetaListener {
         return;
       }
 
-      // Build customer data
+      // shippingAddress is stored as JSON, need to cast it
+      const shippingAddress = order.shippingAddress as Record<string, unknown> | null;
+
+      // Build customer data from order fields
+      // For registered users, we need to fetch user data separately
+      let email: string | undefined;
+      let phone: string | undefined;
+      let firstName: string | undefined;
+      let lastName: string | undefined;
+      let city: string | undefined;
+      let country: string | undefined;
+
+      if (order.userId) {
+        // Try to get user data for registered customers
+        const user = await this.prisma.user.findUnique({
+          where: { id: order.userId },
+          select: { email: true, firstName: true, lastName: true, phones: true },
+        });
+        if (user) {
+          email = user.email ?? undefined;
+          firstName = user.firstName ?? undefined;
+          lastName = user.lastName ?? undefined;
+          phone = user.phones?.[0] ?? undefined;
+        }
+      }
+
+      // Override with guest data if available
+      if (order.guestEmail) {
+        email = order.guestEmail;
+      }
+      if (order.guestPhone) {
+        phone = order.guestPhone;
+      }
+      if (order.guestName) {
+        const nameParts = order.guestName.split(' ');
+        firstName = nameParts[0];
+        lastName = nameParts.slice(1).join(' ');
+      }
+
+      // Get shipping address data
+      if (shippingAddress) {
+        city = (shippingAddress.city as string) ?? undefined;
+        country = (shippingAddress.country as string) ?? 'Bangladesh';
+      }
+
       const customerData = {
-        email: order.user?.email || order.guestEmail || undefined,
-        phone: order.user?.phone || order.guestPhone || undefined,
-        firstName: order.shippingAddress?.firstName || order.guestName?.split(' ')[0] || undefined,
-        lastName: order.shippingAddress?.lastName || order.guestName?.split(' ').slice(1).join(' ') || undefined,
-        city: order.shippingAddress?.city || undefined,
-        country: order.shippingAddress?.country || 'Bangladesh',
+        email,
+        phone,
+        firstName,
+        lastName,
+        city,
+        country,
       };
 
-      // Build order items
+      // Build order items from product slugs
       const items = order.items.map((item) => ({
-        productId: item.variant.product.slug,
+        productId: item.product?.slug ?? 'unknown',
         quantity: item.quantity,
       }));
 
       // Build event source URL
       const eventSourceUrl = `https://denimisia.online/account/orders/${order.orderNumber}`;
 
+      // Convert total from Decimal to number
+      const totalValue = typeof order.total === 'number'
+        ? order.total
+        : Number(order.total);
+
       // Send Purchase event to Meta CAPI
       await this.metaService.sendPurchaseEvent(
         order.id,
         order.orderNumber,
-        order.total,
+        totalValue,
         'BDT',
         items,
         customerData,
