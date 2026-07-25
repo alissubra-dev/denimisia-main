@@ -393,36 +393,45 @@ export default function EditProductPage() {
                 body: JSON.stringify(variantData),
               });
             } catch (err) {
-              // If we get a 409 Conflict, the SKU already exists
-              // This happens when trying to add a new size but the generated SKU matches an existing one
+              // If we get a 409 Conflict, generate a unique SKU and try again
               const errorMessage = err instanceof Error ? err.message : String(err);
 
-              // Generate the SKU that was used for the attempted create
-              const slugCode = currentSlug.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4).padEnd(2, 'X');
-              const colorCode = builderColor.name.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3).padEnd(2, 'X');
-              const sizeCode = sizeEntry.label.replace(/[^A-Za-z0-9]/g, '');
-              const attemptedSku = `${slugCode}-${colorCode}-${sizeCode}`;
+              if (errorMessage.includes('409') || errorMessage.includes('Conflict')) {
+                // Generate a unique SKU by adding a random suffix
+                const uniqueSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+                const slugCode = currentSlug.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4).padEnd(2, 'X');
+                const colorCode = builderColor.name.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3).padEnd(2, 'X');
+                const sizeCode = sizeEntry.label.replace(/[^A-Za-z0-9]/g, '');
+                const uniqueSku = `${slugCode}-${colorCode}-${sizeCode}-${uniqueSuffix}`;
 
-              // Try to find existing variant by SKU
-              const existingVariant = variants.find(v => v.sku === attemptedSku);
+                console.log(`[DEBUG] SKU conflict, retrying with unique SKU: ${uniqueSku}`);
 
-              if (existingVariant) {
-                // Variant exists with same SKU - update its stock instead
-                console.log(`[DEBUG] Variant with SKU ${attemptedSku} exists, updating stock to ${sizeEntry.stock}`);
                 try {
-                  await adminFetch(`/products/${productId}/variants/${existingVariant.id}`, token, {
-                    method: 'PATCH',
-                    body: JSON.stringify({ stock: sizeEntry.stock }),
+                  const variantData: Record<string, unknown> = {
+                    sku: uniqueSku,
+                    size: sizeEntry.label,
+                    color: builderColor.name,
+                    stock: sizeEntry.stock,
+                  };
+                  if (builderColor.hex && /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(builderColor.hex)) {
+                    variantData.colorHex = builderColor.hex;
+                  }
+                  if (builderColor.images.length > 0) {
+                    variantData.images = builderColor.images;
+                  }
+
+                  await adminFetch(`/products/${productId}/variants`, token, {
+                    method: 'POST',
+                    body: JSON.stringify(variantData),
                   });
-                  console.log(`[DEBUG] Successfully updated stock for variant ${existingVariant.id}`);
-                } catch (updateErr) {
-                  console.error(`Failed to update stock: ${updateErr}`);
+                  console.log(`[DEBUG] Successfully created variant with unique SKU: ${uniqueSku}`);
+                } catch (retryErr) {
+                  console.error(`Failed to create variant with unique SKU: ${retryErr}`);
                   hasVariantError = true;
                 }
               } else {
-                // SKU conflict but variant not found locally - could be a data issue
-                console.error(`[DEBUG] SKU ${attemptedSku} conflict but variant not found locally. Error: ${errorMessage}`);
-                // Don't fail the whole save - just log and continue
+                console.error(`Failed to create variant: ${err}`);
+                hasVariantError = true;
               }
             }
           }
