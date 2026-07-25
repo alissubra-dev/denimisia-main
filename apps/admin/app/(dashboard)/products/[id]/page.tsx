@@ -393,13 +393,24 @@ export default function EditProductPage() {
                 body: JSON.stringify(variantData),
               });
             } catch (err) {
-              // If we get a 409 Conflict, try multiple approaches to find and update the existing variant
-              if (err instanceof Error && (err.message.includes('409') || err.message.includes('Conflict'))) {
-                // Try to find existing variant by current color+size name
-                const key = `${builderColor.name.toLowerCase()}|${sizeEntry.label.toLowerCase()}`;
-                let existingVariant = originalVariantMap.get(key);
+              // If we get a 409 Conflict, the SKU likely already exists
+              // Generate the SKU that was used and try to find the existing variant by that SKU
+              const slugCode = currentSlug.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4).padEnd(2, 'X');
+              const colorCode = builderColor.name.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3).padEnd(2, 'X');
+              const sizeCode = sizeEntry.label.replace(/[^A-Za-z0-9]/g, '');
+              const attemptedSku = `${slugCode}-${colorCode}-${sizeCode}`;
 
-                // If not found, try searching through all variants for a match
+              if (err instanceof Error && (err.message.includes('409') || err.message.includes('Conflict'))) {
+                // Try to find existing variant by SKU first
+                let existingVariant = variants.find(v => v.sku === attemptedSku);
+
+                // If not found by SKU, try by color+size name
+                if (!existingVariant) {
+                  const key = `${builderColor.name.toLowerCase()}|${sizeEntry.label.toLowerCase()}`;
+                  existingVariant = originalVariantMap.get(key);
+                }
+
+                // If still not found, try searching through all variants for a match
                 if (!existingVariant) {
                   for (const [, v] of originalVariantMap) {
                     if ((v.color || '').toLowerCase() === builderColor.name.toLowerCase() &&

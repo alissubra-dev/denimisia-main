@@ -35,7 +35,10 @@ export async function adminFetch<T>(
     try {
       body = JSON.parse(text);
     } catch {}
-    throw new Error((body as { message?: string }).message ?? `API error ${res.status}`);
+    const errorMessage = (body as { message?: string }).message ?? `API error ${res.status}`;
+    // Include status code in error message for better error handling
+    const error = new Error(`[${res.status}] ${errorMessage}`);
+    throw error;
   }
 
   let json = {};
