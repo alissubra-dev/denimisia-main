@@ -76,6 +76,7 @@ export class OrdersController {
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
+  @Header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
   getOrder(@CurrentUser() user: any, @Param('id') id: string) {
     // Admins (ADMIN / SUPER_ADMIN) must be able to open any order from
     // the admin panel — including guest orders where order.userId is
@@ -151,6 +152,7 @@ export class OrdersController {
   @Patch('admin/:id/customer')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SUPPORT_STAFF)
+  @Header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
   updateOrderCustomer(
     @Param('id') id: string,
     @Body() dto: UpdateOrderCustomerDto,
