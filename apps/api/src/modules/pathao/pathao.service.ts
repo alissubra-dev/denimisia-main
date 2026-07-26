@@ -379,7 +379,29 @@ export class PathaoService {
     };
 
     // Try multiple sources for phone and address - check all possible fields
-    const phone = address?.phone || order.guestPhone;
+    let phone = address?.phone || order.guestPhone;
+
+    // Format phone number to Pathao's required format (01XXXXXXXXX - 11 digits starting with 01)
+    if (phone) {
+      // Remove all non-digit characters
+      phone = phone.replace(/\D/g, '');
+
+      // Convert to Bangladesh format: if starts with +880, remove it; if starts with 880, remove it; ensure starts with 01
+      if (phone.startsWith('880')) {
+        phone = '1' + phone.slice(3);
+      } else if (phone.startsWith('+880')) {
+        phone = '1' + phone.slice(4);
+      } else if (!phone.startsWith('01') && phone.length >= 10) {
+        // If it doesn't start with 01 but has 10+ digits, assume it's missing the country code
+        phone = '1' + phone.slice(-10);
+      }
+
+      // Ensure exactly 11 digits
+      if (phone.length !== 11 || !phone.startsWith('01')) {
+        this.logger.warn(`Order ${order.orderNumber} has invalid phone format: ${phone}`);
+      }
+    }
+
     const streetAddress = address?.address || address?.street || address?.line1 || 'Address not provided';
 
     if (!phone || !streetAddress) {
