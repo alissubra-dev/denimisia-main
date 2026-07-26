@@ -66,6 +66,7 @@ export function CreateOrderModal({
   const [shippingLocation, setShippingLocation] = useState<'insideDhaka' | 'outsideDhaka'>('insideDhaka');
   const DIVISIONS = ['Dhaka', 'Barishal', 'Chattogram', 'Khulna', 'Rajshahi', 'Sylhet', 'Rangpur', 'Mymensingh'];
   const [notes, setNotes] = useState('');
+  const [customDiscount, setCustomDiscount] = useState(0);
   const [items, setItems] = useState<OrderItem[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProductId, setSelectedProductId] = useState('');
@@ -102,6 +103,7 @@ export function CreateOrderModal({
       setShippingDivision('');
       setShippingLocation('insideDhaka');
       setNotes('');
+      setCustomDiscount(0);
       setItems([]);
       setSelectedProductId('');
       setSelectedVariantId('');
@@ -146,7 +148,8 @@ export function CreateOrderModal({
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const shippingCost = items.length > 0 ? SHIPPING_RATES[shippingLocation] : 0;
-  const total = subtotal + shippingCost;
+  const discount = customDiscount;
+  const total = subtotal + shippingCost - discount;
 
   const handleSubmit = async () => {
     if (!token) return;
@@ -180,6 +183,7 @@ export function CreateOrderModal({
           location: shippingLocation,
         },
         shippingCost: shippingCost,
+        customDiscount: customDiscount > 0 ? customDiscount : undefined,
         guestName: customerName,
         guestEmail: customerEmail,
         guestPhone: customerPhone,
@@ -504,6 +508,26 @@ export function CreateOrderModal({
             />
           </div>
 
+          {/* Custom Discount */}
+          <div className="space-y-2">
+            <label className="block text-xs font-bold uppercase tracking-widest text-secondary">
+              Custom Discount (Optional)
+            </label>
+            <div className="flex items-center gap-2">
+              <span className="text-secondary font-bold">৳</span>
+              <input
+                type="number"
+                min="0"
+                max={subtotal}
+                value={customDiscount || ''}
+                onChange={(e) => setCustomDiscount(Math.max(0, Number(e.target.value)))}
+                placeholder="0"
+                className="flex-1 px-3 py-2 text-sm border border-outline-variant/20 rounded-sm bg-surface-container text-on-surface focus:outline-none focus:border-primary"
+              />
+            </div>
+            <p className="text-xs text-muted">Apply a custom discount from admin side</p>
+          </div>
+
           {/* Order Total */}
           <div className="flex justify-end">
             <div className="bg-surface-container-high px-6 py-4 rounded-sm">
@@ -515,6 +539,12 @@ export function CreateOrderModal({
                 <span className="text-secondary">Shipping:</span>
                 <span className="text-on-surface font-semibold">{BDT_FORMATTER.format(shippingCost)}</span>
               </div>
+              {customDiscount > 0 && (
+                <div className="flex justify-between gap-8 text-sm mt-2 text-green-600">
+                  <span>Discount:</span>
+                  <span className="font-semibold">-{BDT_FORMATTER.format(customDiscount)}</span>
+                </div>
+              )}
               <div className="flex justify-between gap-8 text-sm mt-2 pt-2 border-t border-outline-variant/20">
                 <span className="text-on-surface font-bold uppercase tracking-wider">Total:</span>
                 <span className="text-primary font-bold">{BDT_FORMATTER.format(total)}</span>

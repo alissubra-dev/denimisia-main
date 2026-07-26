@@ -135,7 +135,13 @@ export class OrdersService {
 
     let discountAmount = 0;
     let discountId: string | undefined;
-    if (dto.discountCode) {
+
+    // Handle custom discount from admin (manual discount without code)
+    if (dto.customDiscount && dto.customDiscount > 0) {
+      discountAmount = Math.min(dto.customDiscount, subtotal);
+    }
+    // Handle discount code if provided (only if no custom discount)
+    else if (dto.discountCode) {
       ({ discountId, discountAmount } = await this.resolveDiscount(
         dto.discountCode,
         subtotal,
@@ -378,7 +384,13 @@ export class OrdersService {
 
     let discountAmount = 0;
     let discountId: string | undefined;
-    if (dto.discountCode) {
+
+    // Handle custom discount from admin (manual discount without code)
+    if (dto.customDiscount && dto.customDiscount > 0) {
+      discountAmount = Math.min(dto.customDiscount, subtotal);
+    }
+    // Handle discount code if provided (only if no custom discount)
+    else if (dto.discountCode) {
       ({ discountId, discountAmount } = await this.resolveDiscount(
         dto.discountCode,
         subtotal,
