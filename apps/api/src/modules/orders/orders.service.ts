@@ -692,7 +692,25 @@ export class OrdersService {
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
-        include: {
+        select: {
+          id: true,
+          orderNumber: true,
+          userId: true,
+          guestName: true,
+          guestEmail: true,
+          guestPhone: true,
+          status: true,
+          subtotal: true,
+          discount: true,
+          shippingCost: true,
+          total: true,
+          notes: true,
+          trackingNumber: true,
+          courier: true,
+          consignmentId: true,
+          deliveryStatus: true,
+          createdAt: true,
+          updatedAt: true,
           user: {
             select: {
               id: true,
