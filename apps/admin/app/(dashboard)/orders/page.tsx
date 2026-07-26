@@ -239,6 +239,8 @@ export default function OrdersPage() {
         return value;
       };
       const formatName = (o: Order): string => {
+        // Priority: guestName (if explicitly set by admin) > user info > customer > fallback
+        if (o.guestName) return o.guestName;
         if (o.user) {
           const combined = [o.user.firstName, o.user.lastName]
             .filter(Boolean)
@@ -248,7 +250,6 @@ export default function OrdersPage() {
           if (o.user.name) return o.user.name;
           if (o.user.email) return o.user.email;
         }
-        if (o.guestName) return o.guestName;
         if (o.customer?.name) return o.customer.name;
         return 'Guest';
       };
@@ -276,7 +277,7 @@ export default function OrdersPage() {
         o.orderNumber ?? o.id,
         formatName(o),
         o.user?.email ?? o.guestEmail ?? '',
-        o.user?.phones?.[0] ?? o.guestPhone ?? '',
+        o.guestPhone ?? o.user?.phones?.[0] ?? '',
         String(formatItemCount(o)),
         o.status,
         String(o.total),
@@ -345,24 +346,27 @@ export default function OrdersPage() {
   };
 
   const getCustomerName = (order: Order): string => {
-    // API User has firstName + lastName, not a single `name` field. Fall
-    // back to guest fields for orders placed without an account.
+    // Priority: guestName (if explicitly set by admin) > user info > customer > fallback
     const fullName = [order.user?.firstName, order.user?.lastName]
       .filter(Boolean)
       .join(' ')
       .trim();
     return (
+      order.guestName ||
       fullName ||
       order.user?.name ||
-      order.guestName ||
       order.customer?.name ||
       'Unknown'
     );
   };
 
   const getCustomerEmail = (order: Order): string => {
+    // Priority: guestEmail (if explicitly set by admin) > user email > customer email
     return (
-      order.user?.email ?? order.guestEmail ?? order.customer?.email ?? ''
+      order.guestEmail ||
+      order.user?.email ||
+      order.customer?.email ||
+      ''
     );
   };
 
