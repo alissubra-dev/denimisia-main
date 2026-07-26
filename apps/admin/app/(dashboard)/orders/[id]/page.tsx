@@ -204,7 +204,11 @@ function Currency({
 // API returns firstName/lastName for registered patrons and guestName for
 // guest checkouts. The admin payload no longer carries a flat `name`, so
 // resolve the display name from whichever shape is present.
+// Priority: guest fields (for admin editing) > user fields > address fields
 function getCustomerName(order: Order): string {
+  // First check if guest fields were explicitly set (admin editing)
+  if (order.guestName) return order.guestName;
+
   const full = [order.user?.firstName, order.user?.lastName]
     .filter((part): part is string => Boolean(part && part.trim()))
     .join(' ')
@@ -212,7 +216,6 @@ function getCustomerName(order: Order): string {
   return (
     full ||
     order.user?.name ||
-    order.guestName ||
     order.customer?.name ||
     order.shippingAddress?.name ||
     ''
@@ -220,12 +223,17 @@ function getCustomerName(order: Order): string {
 }
 
 function getCustomerEmail(order: Order): string {
-  return order.user?.email || order.guestEmail || order.customer?.email || '';
+  // First check if guest fields were explicitly set (admin editing)
+  if (order.guestEmail) return order.guestEmail;
+
+  return order.user?.email || order.customer?.email || '';
 }
 
 function getCustomerPhone(order: Order): string {
+  // First check if guest fields were explicitly set (admin editing)
+  if (order.guestPhone) return order.guestPhone;
+
   return (
-    order.guestPhone ||
     order.shippingAddress?.phone ||
     order.user?.phones?.[0] ||
     order.customer?.phones?.[0] ||
