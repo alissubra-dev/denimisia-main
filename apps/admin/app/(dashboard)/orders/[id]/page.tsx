@@ -369,11 +369,14 @@ export default function OrderDetailPage() {
           guestPhone: customerForm.phone,
         }),
       });
+
+      console.log('Updated order from API:', updatedOrder.guestName, updatedOrder.guestEmail, updatedOrder.guestPhone);
+
       // Use the returned updated order directly instead of refetching
       setOrder(updatedOrder);
       setSelectedStatus(updatedOrder.status);
       setEditingCustomer(false);
-      setActionBanner({ tone: 'success', message: `Patron info updated to: ${customerForm.name} / ${customerForm.email}` });
+      setActionBanner({ tone: 'success', message: `Saved: ${updatedOrder.guestName || '(empty)'} | ${updatedOrder.guestEmail || '(empty)'} | ${updatedOrder.guestPhone || '(empty)'}` });
     } catch (err: unknown) {
       setActionBanner({
         tone: 'error',
