@@ -103,3 +103,24 @@ export class UpdateOrderStatusDto {
   @IsOptional()
   note?: string;
 }
+
+export class UpdateOrderCustomerDto {
+  @IsString()
+  @IsOptional()
+  @MaxLength(100)
+  guestName?: string;
+
+  @IsEmail()
+  @IsOptional()
+  @MaxLength(255)
+  guestEmail?: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(20)
+  guestPhone?: string;
+
+  @IsObject()
+  @IsOptional()
+  shippingAddress?: Record<string, unknown>;
+}

@@ -255,6 +255,9 @@ export default function OrderDetailPage() {
   const [refundConfirmOpen, setRefundConfirmOpen] = useState(false);
   const [statusConfirmOpen, setStatusConfirmOpen] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<OrderStatus | null>(null);
+  const [editingCustomer, setEditingCustomer] = useState(false);
+  const [customerForm, setCustomerForm] = useState({ name: '', email: '', phone: '' });
+  const [savingCustomer, setSavingCustomer] = useState(false);
   const [creatingShipment, setCreatingShipment] = useState(false);
 
   const fetchOrder = useCallback(async () => {
@@ -330,6 +333,41 @@ export default function OrderDetailPage() {
       });
     } finally {
       setCreatingShipment(false);
+    }
+  };
+
+  const handleEditCustomer = () => {
+    if (!order) return;
+    setCustomerForm({
+      name: customerName,
+      email: customerEmail,
+      phone: customerPhone,
+    });
+    setEditingCustomer(true);
+  };
+
+  const handleSaveCustomer = async () => {
+    if (!token || !order) return;
+    setSavingCustomer(true);
+    try {
+      await adminFetch(`/orders/admin/${orderId}/customer`, token, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          guestName: customerForm.name,
+          guestEmail: customerForm.email,
+          guestPhone: customerForm.phone,
+        }),
+      });
+      await fetchOrder();
+      setEditingCustomer(false);
+      setActionBanner({ tone: 'success', message: 'Patron info updated.' });
+    } catch (err: unknown) {
+      setActionBanner({
+        tone: 'error',
+        message: err instanceof Error ? err.message : 'Failed to update patron',
+      });
+    } finally {
+      setSavingCustomer(false);
     }
   };
 
@@ -798,33 +836,96 @@ export default function OrderDetailPage() {
         <aside className="space-y-6 lg:sticky lg:top-6 lg:self-start">
           {/* Customer */}
           <div className="bg-surface-container-lowest rounded-sm border border-outline-variant/5 p-6">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-secondary mb-4">
-              Patron
-            </p>
-            <div className="space-y-3 text-sm">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-secondary mb-1">
-                  Name
-                </p>
-                <p className="text-sm font-semibold text-on-surface">{customerName}</p>
-              </div>
-              {customerEmail && (
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-secondary">
+                Patron
+              </p>
+              {!editingCustomer && (
+                <button
+                  onClick={handleEditCustomer}
+                  className="text-[10px] font-bold uppercase tracking-widest text-secondary hover:text-primary transition-colors"
+                >
+                  Edit
+                </button>
+              )}
+            </div>
+            {editingCustomer ? (
+              <div className="space-y-3">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-secondary mb-1">
+                    Name
+                  </p>
+                  <input
+                    type="text"
+                    value={customerForm.name}
+                    onChange={(e) => setCustomerForm({ ...customerForm, name: e.target.value })}
+                    className="w-full px-3 py-2 text-sm border border-outline-variant/20 rounded-sm bg-surface-container text-on-surface focus:outline-none focus:border-primary"
+                  />
+                </div>
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-widest text-secondary mb-1">
                     Email
                   </p>
-                  <p className="text-sm text-on-surface break-all">{customerEmail}</p>
+                  <input
+                    type="email"
+                    value={customerForm.email}
+                    onChange={(e) => setCustomerForm({ ...customerForm, email: e.target.value })}
+                    className="w-full px-3 py-2 text-sm border border-outline-variant/20 rounded-sm bg-surface-container text-on-surface focus:outline-none focus:border-primary"
+                  />
                 </div>
-              )}
-              {customerPhone && (
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-widest text-secondary mb-1">
                     Phone
                   </p>
-                  <p className="text-sm text-on-surface">{customerPhone}</p>
+                  <input
+                    type="tel"
+                    value={customerForm.phone}
+                    onChange={(e) => setCustomerForm({ ...customerForm, phone: e.target.value })}
+                    className="w-full px-3 py-2 text-sm border border-outline-variant/20 rounded-sm bg-surface-container text-on-surface focus:outline-none focus:border-primary"
+                  />
                 </div>
-              )}
-            </div>
+                <div className="flex gap-2 pt-2">
+                  <button
+                    onClick={handleSaveCustomer}
+                    disabled={savingCustomer}
+                    className="flex-1 px-4 py-2 text-xs font-bold uppercase tracking-widest bg-primary text-on-primary hover:opacity-90 disabled:opacity-40"
+                  >
+                    {savingCustomer ? 'Saving...' : 'Save'}
+                  </button>
+                  <button
+                    onClick={() => setEditingCustomer(false)}
+                    className="flex-1 px-4 py-2 text-xs font-bold uppercase tracking-widest border border-outline-variant/20 text-on-surface hover:bg-surface-container-high"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3 text-sm">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-secondary mb-1">
+                    Name
+                  </p>
+                  <p className="text-sm font-semibold text-on-surface">{customerName}</p>
+                </div>
+                {customerEmail && (
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-secondary mb-1">
+                      Email
+                    </p>
+                    <p className="text-sm text-on-surface break-all">{customerEmail}</p>
+                  </div>
+                )}
+                {customerPhone && (
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-secondary mb-1">
+                      Phone
+                    </p>
+                    <p className="text-sm text-on-surface">{customerPhone}</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Shipping Address */}

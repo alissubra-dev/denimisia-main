@@ -17,6 +17,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateOrderDto,
   UpdateOrderStatusDto,
+  UpdateOrderCustomerDto,
   OrderItemDto,
 } from './orders.dto';
 import { OrderStatus } from '@prisma/client';
@@ -781,6 +782,35 @@ export class OrdersService {
       'order.status_changed',
       new OrderStatusChangedEvent(orderId, fromStatus, newStatus, actorId),
     );
+
+    return updated;
+  }
+
+  async updateOrderCustomer(orderId: string, dto: UpdateOrderCustomerDto) {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+    });
+    if (!order) throw new NotFoundException('Order not found');
+
+    const updateData: Record<string, unknown> = {};
+
+    if (dto.guestName !== undefined) {
+      updateData.guestName = dto.guestName;
+    }
+    if (dto.guestEmail !== undefined) {
+      updateData.guestEmail = dto.guestEmail;
+    }
+    if (dto.guestPhone !== undefined) {
+      updateData.guestPhone = dto.guestPhone;
+    }
+    if (dto.shippingAddress !== undefined) {
+      updateData.shippingAddress = dto.shippingAddress as Prisma.InputJsonValue;
+    }
+
+    const updated = await this.prisma.order.update({
+      where: { id: orderId },
+      data: updateData,
+    });
 
     return updated;
   }

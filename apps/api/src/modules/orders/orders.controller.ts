@@ -16,7 +16,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Express } from 'express';
 import { OrdersService } from './orders.service';
-import { CreateOrderDto, UpdateOrderStatusDto } from './orders.dto';
+import { CreateOrderDto, UpdateOrderStatusDto, UpdateOrderCustomerDto } from './orders.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../../common/guards/optional-jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -144,6 +144,16 @@ export class OrdersController {
   ) {
     // actorId comes from the authenticated admin user — never trust dto.changedBy.
     return this.ordersService.updateOrderStatus(id, dto, user.id);
+  }
+
+  @Patch('admin/:id/customer')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SUPPORT_STAFF)
+  updateOrderCustomer(
+    @Param('id') id: string,
+    @Body() dto: UpdateOrderCustomerDto,
+  ) {
+    return this.ordersService.updateOrderCustomer(id, dto);
   }
 
   // Admin-only endpoint to manually create an order (e.g., from phone orders)
