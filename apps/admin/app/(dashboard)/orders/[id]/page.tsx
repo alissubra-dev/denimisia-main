@@ -479,10 +479,19 @@ export default function OrderDetailPage() {
       const itemsHtml = order.items
         .map((it) => {
           const name = escapeHtml(it.product?.name ?? it.productName ?? 'Unknown Product');
+          // Get variant info (size/color)
+          const variantParts: string[] = [];
+          if (it.variant?.size ?? it.snapshot?.size) {
+            variantParts.push(String(it.variant?.size ?? it.snapshot?.size));
+          }
+          if (it.variant?.color ?? it.snapshot?.color) {
+            variantParts.push(String(it.variant?.color ?? it.snapshot?.color));
+          }
+          const variant = variantParts.length > 0 ? ` (${variantParts.join(' / ')})` : '';
           const unit = toMoney(it.unitPrice ?? it.price);
           const totalRaw = it.total != null ? toMoney(it.total) : 0;
           const total = totalRaw > 0 ? totalRaw : unit * it.quantity;
-          return `<tr><td style="padding:8px;border-bottom:1px solid #eee">${name}</td><td style="padding:8px;border-bottom:1px solid #eee;text-align:center">${it.quantity}</td><td style="padding:8px;border-bottom:1px solid #eee;text-align:right">${escapeHtml(BDT_FORMATTER.format(unit))}</td><td style="padding:8px;border-bottom:1px solid #eee;text-align:right">${escapeHtml(BDT_FORMATTER.format(total))}</td></tr>`;
+          return `<tr><td style="padding:8px;border-bottom:1px solid #eee">${name}${variant}</td><td style="padding:8px;border-bottom:1px solid #eee;text-align:center">${it.quantity}</td><td style="padding:8px;border-bottom:1px solid #eee;text-align:right">${escapeHtml(BDT_FORMATTER.format(unit))}</td><td style="padding:8px;border-bottom:1px solid #eee;text-align:right">${escapeHtml(BDT_FORMATTER.format(total))}</td></tr>`;
         })
         .join('');
       const subtotalLine = escapeHtml(
