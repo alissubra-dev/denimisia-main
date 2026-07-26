@@ -857,12 +857,13 @@ export class OrdersService {
       updateData.shippingAddress = dto.shippingAddress as Prisma.InputJsonValue;
     }
 
-    const updated = await this.prisma.order.update({
+    await this.prisma.order.update({
       where: { id: orderId },
       data: updateData,
     });
 
-    return updated;
+    // Return the full order with all related data (same as getOrderById)
+    return this.getOrderById('', orderId, true);
   }
 
   async getStatusHistory(

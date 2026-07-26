@@ -360,8 +360,7 @@ export default function OrderDetailPage() {
     if (!token || !order) return;
     setSavingCustomer(true);
     try {
-      // Use PATCH to update and get back the updated order directly
-      const updatedOrder = await adminFetch<Order>(`/orders/admin/${orderId}/customer`, token, {
+      await adminFetch(`/orders/admin/${orderId}/customer`, token, {
         method: 'PATCH',
         body: JSON.stringify({
           guestName: customerForm.name,
@@ -370,13 +369,10 @@ export default function OrderDetailPage() {
         }),
       });
 
-      console.log('Updated order from API:', updatedOrder.guestName, updatedOrder.guestEmail, updatedOrder.guestPhone);
-
-      // Use the returned updated order directly instead of refetching
-      setOrder(updatedOrder);
-      setSelectedStatus(updatedOrder.status);
+      // Refetch the full order after update
+      await fetchOrder();
       setEditingCustomer(false);
-      setActionBanner({ tone: 'success', message: `Saved: ${updatedOrder.guestName || '(empty)'} | ${updatedOrder.guestEmail || '(empty)'} | ${updatedOrder.guestPhone || '(empty)'}` });
+      setActionBanner({ tone: 'success', message: `Saved: ${customerForm.name} | ${customerForm.email} | ${customerForm.phone}` });
     } catch (err: unknown) {
       setActionBanner({
         tone: 'error',
