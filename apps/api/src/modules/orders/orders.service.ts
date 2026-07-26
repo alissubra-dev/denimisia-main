@@ -563,7 +563,27 @@ export class OrdersService {
   async getOrderById(userId: string, orderId: string, isAdmin = false) {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
-      include: {
+      select: {
+        id: true,
+        orderNumber: true,
+        userId: true,
+        guestName: true,
+        guestEmail: true,
+        guestPhone: true,
+        status: true,
+        subtotal: true,
+        discount: true,
+        shippingCost: true,
+        total: true,
+        notes: true,
+        trackingNumber: true,
+        courier: true,
+        consignmentId: true,
+        deliveryStatus: true,
+        createdAt: true,
+        updatedAt: true,
+        shippingAddress: true,
+        billingAddress: true,
         user: {
           select: { id: true, email: true, firstName: true, lastName: true },
         },
