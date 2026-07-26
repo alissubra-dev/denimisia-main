@@ -12,6 +12,7 @@ import {
   HttpCode,
   HttpStatus,
   BadRequestException,
+  Header,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Express } from 'express';
@@ -96,6 +97,7 @@ export class OrdersController {
   @Get('admin/all')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SUPPORT_STAFF)
+  @Header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
   getAllOrders(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
