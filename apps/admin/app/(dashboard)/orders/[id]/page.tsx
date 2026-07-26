@@ -338,10 +338,12 @@ export default function OrderDetailPage() {
 
   const handleEditCustomer = () => {
     if (!order) return;
+    // Use raw guest fields directly instead of computed display values
+    // This ensures the edit form shows what's actually stored in the database
     setCustomerForm({
-      name: customerName,
-      email: customerEmail,
-      phone: customerPhone,
+      name: order.guestName || '',
+      email: order.guestEmail || '',
+      phone: order.guestPhone || order.shippingAddress?.phone || '',
     });
     setEditingCustomer(true);
   };
