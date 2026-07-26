@@ -265,7 +265,7 @@ export default function OrderDetailPage() {
     setLoading(true);
     setError('');
     try {
-      const data = await adminFetch<Order>(`/orders/${orderId}`, token);
+      const data = await adminFetch<Order>(`/orders/${orderId}?_t=${Date.now()}`, token);
       setOrder(data);
       setSelectedStatus(data.status);
     } catch (err: unknown) {
@@ -350,7 +350,7 @@ export default function OrderDetailPage() {
     if (!token || !order) return;
     setSavingCustomer(true);
     try {
-      await adminFetch(`/orders/admin/${orderId}/customer`, token, {
+      await adminFetch(`/orders/admin/${orderId}/customer?_t=${Date.now()}`, token, {
         method: 'PATCH',
         body: JSON.stringify({
           guestName: customerForm.name,

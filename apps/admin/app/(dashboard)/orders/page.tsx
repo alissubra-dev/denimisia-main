@@ -166,6 +166,7 @@ export default function OrdersPage() {
         page: String(page),
         limit: String(limit),
         ...(statusFilter ? { status: statusFilter } : {}),
+        _t: String(Date.now()), // Cache bust
       });
       const data = await adminFetch<OrdersResponse>(
         `/orders/admin/all?${query.toString()}`,
