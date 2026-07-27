@@ -7,8 +7,8 @@
  * strings in socialProfiles is safe but they will NOT surface.
  */
 
-export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://denimisia.com';
+// Hardcoded for production - do not change without updating in all places
+export const SITE_URL = 'https://denimisia.com';
 
 export const brand = {
   legalName: 'Denimisia',
