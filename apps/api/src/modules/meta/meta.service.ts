@@ -134,11 +134,18 @@ export class MetaService {
           {
             event_name: input.eventName,
             event_time: eventTime,
-            event_id: input.eventId,
             action_source: 'website',
+            event_id: input.eventId,
             event_source_url: input.eventSourceUrl,
             user_data: this.buildUserData(input.userData),
+            attribution_data: {
+              attribution_share: 0.3,
+            },
             custom_data: input.customData,
+            original_event_data: {
+              event_name: input.eventName,
+              event_time: eventTime,
+            },
           },
         ],
       };
