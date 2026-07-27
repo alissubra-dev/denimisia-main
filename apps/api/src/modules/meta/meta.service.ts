@@ -106,10 +106,8 @@ export class MetaService {
       userDataHashed.country = [this.hashData(userData.country)];
     }
 
-    // Add client IP and user agent for better matching
-    // These should be passed from the request context
-    userDataHashed.client_ip_address = [''];
-    userDataHashed.client_user_agent = [''];
+    // Note: client_ip_address and client_user_agent are optional
+    // Meta can still match users via hashed email/phone
 
     return userDataHashed;
   }
