@@ -9,22 +9,16 @@ export function MetaPixel() {
     <>
       <Script
         id="meta-pixel-base"
+        src="https://connect.facebook.net/en_US/fbevents.js"
         strategy="afterInteractive"
-        dangerouslySetInnerHTML={{
-          __html: `
-            (function() {
-              var fbqScript = document.createElement('script');
-              fbqScript.src = 'https://connect.facebook.net/en_US/fbevents.js';
-              fbqScript.async = true;
-              fbqScript.onload = function() {
-                if (window.fbq) {
-                  window.fbq('init', '${META_PIXEL_ID}');
-                  window.fbq('track', 'PageView');
-                }
-              };
-              document.head.appendChild(fbqScript);
-            })();
-          `.replace('${META_PIXEL_ID}', META_PIXEL_ID),
+        onLoad={() => {
+          // @ts-ignore
+          if (window.fbq) {
+            // @ts-ignore
+            window.fbq('init', META_PIXEL_ID);
+            // @ts-ignore
+            window.fbq('track', 'PageView');
+          }
         }}
       />
       <noscript>
