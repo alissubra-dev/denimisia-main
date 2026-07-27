@@ -480,6 +480,7 @@ export default function OrderDetailPage() {
       const addr = order.shippingAddress;
       const customerName = escapeHtml(getCustomerName(order));
       const customerEmail = escapeHtml(getCustomerEmail(order));
+      const customerPhone = escapeHtml(getCustomerPhone(order));
       const addrLine1 = addr ? escapeHtml(addr.address ?? addr.street ?? addr.line1 ?? '') : '';
       const addrLine2 = addr
         ? escapeHtml(
@@ -515,7 +516,7 @@ export default function OrderDetailPage() {
           : '';
       const totalLine = escapeHtml(BDT_FORMATTER.format(toMoney(order.total)));
       const placed = escapeHtml(new Date(order.createdAt).toLocaleDateString());
-      const html = `<!doctype html><html><head><meta charset="utf-8"><title>Invoice ${displayId}</title><style>body{font-family:system-ui,sans-serif;padding:32px;color:#1b1c1c}h1{margin:0 0 4px;font-size:22px;letter-spacing:.1em;text-transform:uppercase}.muted{color:#666;font-size:12px}table{width:100%;border-collapse:collapse;margin-top:24px}th{text-align:left;padding:8px;border-bottom:2px solid #111;font-size:11px;letter-spacing:.1em;text-transform:uppercase}.total{font-weight:700;font-size:16px}</style></head><body><h1>Denimisia</h1><p class="muted">Invoice</p><div style="margin-top:16px"><strong>Order #${displayId}</strong><br><span class="muted">Placed ${placed}</span></div><div style="margin-top:16px"><strong>Bill To</strong><br>${customerName}<br>${customerEmail}${addr ? `<br>${addrLine1}<br>${addrLine2}` : ''}</div><table><thead><tr><th>Item</th><th style="text-align:center">Qty</th><th style="text-align:right">Unit</th><th style="text-align:right">Total</th></tr></thead><tbody>${itemsHtml}</tbody></table><div style="margin-top:24px;text-align:right"><p>Subtotal: ${subtotalLine}</p>${shippingLine}<p class="total">Total: ${totalLine}</p></div><script>window.onload=function(){window.print()}</script></body></html>`;
+      const html = `<!doctype html><html><head><meta charset="utf-8"><title>Invoice ${displayId}</title><style>body{font-family:system-ui,sans-serif;padding:32px;color:#1b1c1c}h1{margin:0 0 4px;font-size:22px;letter-spacing:.1em;text-transform:uppercase}.muted{color:#666;font-size:12px}table{width:100%;border-collapse:collapse;margin-top:24px}th{text-align:left;padding:8px;border-bottom:2px solid #111;font-size:11px;letter-spacing:.1em;text-transform:uppercase}.total{font-weight:700;font-size:16px}</style></head><body><h1>Denimisia</h1><p class="muted">Invoice</p><div style="margin-top:16px"><strong>Order #${displayId}</strong><br><span class="muted">Placed ${placed}</span></div><div style="margin-top:16px"><strong>Bill To</strong><br>${customerName}<br>${customerEmail}${customerPhone ? `<br>${customerPhone}` : ''}${addr ? `<br>${addrLine1}<br>${addrLine2}` : ''}</div><table><thead><tr><th>Item</th><th style="text-align:center">Qty</th><th style="text-align:right">Unit</th><th style="text-align:right">Total</th></tr></thead><tbody>${itemsHtml}</tbody></table><div style="margin-top:24px;text-align:right"><p>Subtotal: ${subtotalLine}</p>${shippingLine}<p class="total">Total: ${totalLine}</p></div><script>window.onload=function(){window.print()}</script></body></html>`;
       const doc = win.document;
       doc.open();
       doc.writeln(html);
