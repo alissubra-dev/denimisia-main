@@ -45,6 +45,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(seoEnv.siteUrl),
   ...defaultMetadata,
   verification: {
     google: seoEnv.googleSiteVerification,
