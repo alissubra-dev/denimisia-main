@@ -102,7 +102,7 @@ export class MetaListener {
       }));
 
       // Build event source URL
-      const eventSourceUrl = `https://denimisia.online/account/orders/${order.orderNumber}`;
+      const eventSourceUrl = `https://denimisia.com/account/orders/${order.orderNumber}`;
 
       // Convert total from Decimal to number
       const totalValue = typeof order.total === 'number'

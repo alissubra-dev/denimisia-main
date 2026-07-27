@@ -22,7 +22,7 @@ export class EmailService {
 
   constructor(private readonly config: ConfigService) {
     const apiKey = this.config.get<string>('RESEND_API_KEY');
-    const fromEmail = this.config.get<string>('RESEND_FROM_EMAIL') || 'noreply@denimisia.online';
+    const fromEmail = this.config.get<string>('RESEND_FROM_EMAIL') || 'noreply@denimisia.com';
     const fromName = this.config.get<string>('RESEND_FROM_NAME') || 'Denimisia';
 
     this.isConfigured = !!apiKey;

@@ -81,7 +81,7 @@ const envSchema = z.object({
 
   // Resend (email) — optional; API works without it
   RESEND_API_KEY: z.string().optional(),
-  RESEND_FROM_EMAIL: z.string().default('noreply@denimisia.online'),
+  RESEND_FROM_EMAIL: z.string().default('noreply@denimisia.com'),
   RESEND_FROM_NAME: z.string().default('Denimisia'),
 
   // Storefront URL used to build links inside transactional emails
