@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import Script from 'next/script';
+import { MetaPixel } from '@/components/meta/meta-pixel';
 import { Navbar } from '@/components/layout/navbar';
 import { Footer } from '@/components/layout/footer';
 import { CartDrawer } from '@/components/layout/cart-drawer';
@@ -84,18 +85,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <Script id="denimisia-splash-init" strategy="beforeInteractive">
           {SPLASH_INIT_SCRIPT}
         </Script>
-        {/* Meta Pixel - load fbevents.js */}
-        <Script
-          id="meta-pixel-base"
-          src="https://connect.facebook.net/en_US/fbevents.js"
-          strategy="afterInteractive"
-          onLoad={() => {
-            // @ts-ignore
-            window.fbq('init', '3968375216817052');
-            // @ts-ignore
-            window.fbq('track', 'PageView');
-          }}
-        />
+        <MetaPixel />
         <JsonLd id="ld-organization" data={organizationJsonLd()} />
         <JsonLd id="ld-website" data={websiteJsonLd()} />
         <Providers>
