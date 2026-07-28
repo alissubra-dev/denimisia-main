@@ -1,6 +1,10 @@
 /**
  * Meta Pixel tracking helper for Denimisia e-commerce events
  *
+ * This pushes events to:
+ * 1. window.fbq (direct Meta Pixel)
+ * 2. window.dataLayer (for GTM to pick up)
+ *
  * Usage:
  * import { trackMetaEvent } from '@/lib/meta-pixel';
  *
@@ -35,7 +39,27 @@ declare global {
       options?: { eventID?: string }
     ) => void;
     _fbq: unknown;
+    dataLayer: Array<Record<string, unknown>>;
   }
+}
+
+/**
+ * Push event to dataLayer for GTM to pick up
+ */
+function pushToDataLayer(eventName: string, data?: MetaEventData, eventId?: string): void {
+  if (typeof window === 'undefined') return;
+
+  const eventData: Record<string, unknown> = {
+    event: eventName,
+    ...data,
+  };
+
+  if (eventId) {
+    eventData.event_id = eventId;
+  }
+
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push(eventData);
 }
 
 /**
@@ -51,6 +75,10 @@ export function trackMetaEvent(
 ): void {
   if (typeof window === 'undefined') return;
 
+  // Push to dataLayer for GTM
+  pushToDataLayer(eventName, data, eventId);
+
+  // Also fire direct fbq (fallback)
   const fbq = window.fbq;
   if (!fbq) {
     console.warn('[Meta Pixel] fbq not loaded yet');
@@ -96,6 +124,42 @@ export function trackAddToCart(
     value,
     currency,
     contents: [{ id: productId, quantity }],
+  });
+}
+
+/**
+ * Track ViewCart event when user views the cart
+ */
+export function trackViewCart(
+  items: Array<{ productId: string; quantity: number }>,
+  value: number,
+  currency = 'BDT'
+): void {
+  trackMetaEvent('ViewCart', {
+    content_ids: items.map((item) => item.productId),
+    content_type: 'product',
+    value,
+    currency,
+    contents: items.map((item) => ({ id: item.productId, quantity: item.quantity })),
+    num_items: items.reduce((sum, item) => sum + item.quantity, 0),
+  });
+}
+
+/**
+ * Track Search event when user searches for products
+ */
+export function trackSearch(
+  searchString: string,
+  items: Array<{ productId: string; quantity: number }>,
+  value: number,
+  currency = 'BDT'
+): void {
+  trackMetaEvent('Search', {
+    content_ids: items.map((item) => item.productId),
+    content_type: 'product',
+    value,
+    currency,
+    contents: items.map((item) => ({ id: item.productId, quantity: item.quantity })),
   });
 }
 

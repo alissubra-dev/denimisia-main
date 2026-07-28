@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { Search, X } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
+import { trackSearch } from '@/lib/meta-pixel';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
 
@@ -46,7 +47,21 @@ function SearchPageInner() {
       const res = await fetch(`${API}/search?q=${encodeURIComponent(q.trim())}`);
       const json = await res.json();
       if (json.success) {
-        setResults(json.data.products ?? json.data ?? []);
+        const products = json.data.products ?? json.data ?? [];
+        setResults(products);
+
+        // Track Search event
+        if (products.length > 0) {
+          const totalValue = products.reduce((sum: number, p: SearchProduct) => {
+            const price = Number(p.price ?? 0);
+            return sum + price;
+          }, 0);
+          trackSearch(
+            q.trim(),
+            products.map((p: SearchProduct) => ({ productId: p.slug, quantity: 1 })),
+            totalValue
+          );
+        }
       } else {
         setResults([]);
       }

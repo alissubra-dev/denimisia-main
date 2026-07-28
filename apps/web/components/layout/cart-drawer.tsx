@@ -8,6 +8,7 @@ import { useIsMobile } from '@/lib/mobile/use-media-query';
 import { BottomSheet } from '@/components/mobile/bottom-sheet';
 import { CartScrollableBody, CartFooter } from './cart-content';
 import { cn } from '@/lib/utils';
+import { trackViewCart } from '@/lib/meta-pixel';
 
 export function CartDrawer() {
   const editMode = useEditModeUrlOnly();
@@ -26,6 +27,20 @@ export function CartDrawer() {
       document.body.style.overflow = '';
     };
   }, [isOpen, isMobile]);
+
+  // Track ViewCart when cart drawer opens
+  useEffect(() => {
+    if (isOpen && mounted) {
+      const items = useCart.getState().items;
+      if (items.length > 0) {
+        const totalValue = items.reduce((sum, item) => sum + item.price * item.qty, 0);
+        trackViewCart(
+          items.map((item) => ({ productId: item.productSlug, quantity: item.qty })),
+          totalValue
+        );
+      }
+    }
+  }, [isOpen, mounted]);
 
   if (editMode) return null;
 
