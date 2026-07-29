@@ -97,7 +97,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </Script>
         {/* Google Tag Manager */}
         <Script id="google-tag-manager" strategy="afterInteractive">
-          {(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s);j.async=true;j.src="https://load.gtm.denimisia.com/ehghvutna.js?"+i;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','41kop=CApJMiIlSj81KjkhPFAgThdTRltHTgMGXAoRGx8FDhsID1oWGQU%3D');}
+          {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s);j.async=true;j.src="https://load.gtm.denimisia.com/ehghvutna.js?"+i;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','41kop=CApJMiIlSj81KjkhPFAgThdTRltHTgMGXAoRGx8FDhsID1oWGQU%3D');`}
         </Script>
         <MetaPixel />
         <JsonLd id="ld-organization" data={organizationJsonLd()} />
