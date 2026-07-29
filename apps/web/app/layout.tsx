@@ -95,10 +95,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <Script id="denimisia-splash-init" strategy="beforeInteractive">
           {SPLASH_INIT_SCRIPT}
         </Script>
-        {/* Google Tag Manager */}
-        <Script id="google-tag-manager" strategy="afterInteractive">
-          {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s);j.async=true;j.src="https://load.gtm.denimisia.com/ehghvutna.js?"+i;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','41kop=CApJMiIlSj81KjkhPFAgThdTRltHTgMGXAoRGx8FDhsID1oWGQU%3D');`}
-        </Script>
+        {/* Google Tag Manager - Stape Custom Loader */}
+        <Script id="google-tag-manager" strategy="afterInteractive" src="https://load.gtm.denimisia.com/ehghvutna.js?41kop=CApJMiIlSj81KjkhPFAgThdTRltHTgMGXAoRGx8FDhsID1oWGQU%3D" />
         <MetaPixel />
         <JsonLd id="ld-organization" data={organizationJsonLd()} />
         <JsonLd id="ld-website" data={websiteJsonLd()} />
