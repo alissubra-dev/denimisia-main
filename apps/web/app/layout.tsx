@@ -100,7 +100,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
           new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
           j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-          'https://load.gtm.denimisia.com/ehghvutna.js?41kop=CApJMiI1Sj81KjkhPFAgThdTbHtgMGXaORGx8FDhsID1oWGOU%3D';f.parentNode.insertBefore(j,f);
+          'https://load.gtm.denimisia.com/ehghvutna.js?41kop=CApJMiIlSj81KjkhPFAgThdTRltHTgMGXAoRGx8FDhsID1oWGQU%3D';f.parentNode.insertBefore(j,f);
           })(window,document,'script','dataLayer','GTM-WTDMTJ8G');`}
         </Script>
         <MetaPixel />
