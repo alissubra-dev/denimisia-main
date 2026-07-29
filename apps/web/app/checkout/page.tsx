@@ -87,7 +87,7 @@ export default function CheckoutPage() {
   // Shipping calculation
   const subtotal = total();
   const isDhaka = city.toLowerCase().includes('dhaka');
-  const shippingCost = subtotal >= 1500 ? 0 : isDhaka ? 70 : 130;
+  const shippingCost = subtotal >= 2000 ? 0 : isDhaka ? 70 : 130;
   const grandTotal = subtotal + shippingCost;
 
   // Track InitiateCheckout when user visits checkout page with items
@@ -497,7 +497,7 @@ export default function CheckoutPage() {
                 </span>
               </div>
               {shippingCost === 0 && (
-                <p className="text-xs text-success">Free shipping on orders over ৳1,500</p>
+                <p className="text-xs text-success">Free shipping on orders over ৳2,000</p>
               )}
               <div className="flex justify-between border-t border-border pt-2 text-base font-semibold">
                 <span className="text-ink">Total</span>
