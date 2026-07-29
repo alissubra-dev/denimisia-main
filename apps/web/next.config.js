@@ -77,11 +77,11 @@ const nextConfig = {
     // CF Web Analytics is later disabled on this zone (no-op).
     const csp = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' static.cloudflareinsights.com https://connect.facebook.net https://*.facebook.com",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' static.cloudflareinsights.com https://connect.facebook.net https://*.facebook.com https://load.gtm.denimisia.com",
       "style-src 'self' 'unsafe-inline' fonts.googleapis.com",
       "font-src 'self' fonts.gstatic.com data:",
       "img-src 'self' data: blob: https:",
-      "connect-src 'self' http://localhost:3001 https://denimisia.com https://*.denimisia.com https://denimisia-api-im1x.onrender.com https://*.supabase.co https://*.r2.cloudflarestorage.com https://*.r2.dev cloudflareinsights.com https://www.facebook.com https://graph.facebook.com https://*.facebook.com",
+      "connect-src 'self' http://localhost:3001 https://denimisia.com https://*.denimisia.com https://denimisia-api-im1x.onrender.com https://*.supabase.co https://*.r2.cloudflarestorage.com https://*.r2.dev cloudflareinsights.com https://www.facebook.com https://graph.facebook.com https://*.facebook.com https://load.gtm.denimisia.com https://www.googletagmanager.com",
       `frame-ancestors 'self' ${adminOrigins}`,
       "object-src 'none'",
       "base-uri 'self'",
