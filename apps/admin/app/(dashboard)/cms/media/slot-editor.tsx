@@ -40,6 +40,8 @@ export function SlotEditor({ slot, token, iframeRef, onSaved }: SlotEditorProps)
   const [ctaLabel, setCtaLabel]     = useState(slot.ctaLabel ?? '');
   const [ctaHref, setCtaHref]       = useState(slot.ctaHref ?? '');
   const [altText, setAltText]       = useState(slot.altText ?? '');
+  const [tileLabel, setTileLabel]   = useState(slot.tileLabel ?? '');
+  const [tileHref, setTileHref]     = useState(slot.tileHref  ?? '');
   const [uploading, setUploading]   = useState(false);
   const [saving, setSaving]         = useState(false);
   const [error, setError]           = useState('');
@@ -48,6 +50,15 @@ export function SlotEditor({ slot, token, iframeRef, onSaved }: SlotEditorProps)
   const inputRef = useRef<HTMLInputElement | null>(null);
   const isTextOnly = slot.maxBytes === 0;
 
+  // Tile fields only apply to slots that actually render a tile overlay
+  // (nav mega-menu, search overlay category tiles, shop-by-fit carousel).
+  // Showing them everywhere would mislead admins into editing values that
+  // never reach the storefront.
+  const showTileFields =
+    slot.pageKey === 'nav' ||
+    (slot.pageKey === 'search' && slot.groupKey === 'search.popular_categories') ||
+    (slot.pageKey === 'shop' && slot.slotKey.startsWith('fit_'));
+
   useEffect(() => {
     setHeading(slot.heading ?? '');
     setSubheading(slot.subheading ?? '');
@@ -55,6 +66,8 @@ export function SlotEditor({ slot, token, iframeRef, onSaved }: SlotEditorProps)
     setCtaLabel(slot.ctaLabel ?? '');
     setCtaHref(slot.ctaHref ?? '');
     setAltText(slot.altText ?? '');
+    setTileLabel(slot.tileLabel ?? '');
+    setTileHref(slot.tileHref ?? '');
     setError('');
     // eslint-disable-next-line react-hooks/exhaustive-deps -- sync only on slot identity change, not per field edit
   }, [slot.id]);
@@ -126,7 +139,7 @@ export function SlotEditor({ slot, token, iframeRef, onSaved }: SlotEditorProps)
         token,
         {
           method: 'PATCH',
-          body: JSON.stringify({ heading, subheading, body, ctaLabel, ctaHref, altText }),
+          body: JSON.stringify({ heading, subheading, body, ctaLabel, ctaHref, altText, tileLabel, tileHref }),
         },
       );
       onSaved(updated);
@@ -135,7 +148,7 @@ export function SlotEditor({ slot, token, iframeRef, onSaved }: SlotEditorProps)
     } finally {
       setSaving(false);
     }
-  }, [token, slot.pageKey, slot.slotKey, heading, subheading, body, ctaLabel, ctaHref, altText, onSaved]);
+  }, [token, slot.pageKey, slot.slotKey, heading, subheading, body, ctaLabel, ctaHref, altText, tileLabel, tileHref, onSaved]);
 
   const loadHistory = useCallback(async () => {
     if (!token) return;
@@ -268,6 +281,21 @@ export function SlotEditor({ slot, token, iframeRef, onSaved }: SlotEditorProps)
             }} />
           </div>
           <TextField label="Alt text" value={altText} onChange={setAltText} />
+          {showTileFields && (
+            <div className="space-y-3 border-t border-outline-variant/10 pt-3">
+              <p className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-secondary">
+                Tile overlay
+              </p>
+              <TextField label="Tile label" value={tileLabel} onChange={(v) => {
+                setTileLabel(v);
+                draft({ tileLabel: v });
+              }} />
+              <TextField label="Tile link" value={tileHref} onChange={(v) => {
+                setTileHref(v);
+                draft({ tileHref: v });
+              }} />
+            </div>
+          )}
         </section>
 
         {showHistory && (

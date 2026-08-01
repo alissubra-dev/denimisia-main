@@ -28,6 +28,8 @@ export interface PageSlotRecord {
   readonly ctaLabel: string | null;
   readonly ctaHref: string | null;
   readonly altText: string | null;
+  readonly tileLabel: string | null;
+  readonly tileHref: string | null;
   readonly position: number;
   readonly groupKey: string | null;
   readonly isActive: boolean;

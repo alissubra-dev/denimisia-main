@@ -382,10 +382,13 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
                           ? pickSlot(searchSlots, cat.slotKey)
                           : undefined;
                         const { src: catSrc } = resolveSlotUrl(slot, cat.image);
+                        const tileLabel = slot?.tileLabel ?? cat.label;
+                        const tileHref  = slot?.tileHref  ?? cat.href;
                         return (
                         <Link
-                          key={cat.label}
-                          href={cat.href}
+                          key={`${cat.slotKey ?? cat.label}-${tileHref}`}
+                          href={tileHref}
+                          data-slot-field="tileHref"
                           onClick={onClose}
                           className="group relative block aspect-[4/5] overflow-hidden bg-ink/5"
                         >
@@ -402,7 +405,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
                           <div className="absolute bottom-3 left-3 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.15em] text-paper">
-                            {cat.label}
+                            <span data-slot-field="tileLabel">{tileLabel}</span>
                             <ArrowUpRight
                               size={12}
                               strokeWidth={2}

@@ -51,6 +51,7 @@ const NAV_GROUPS: readonly NavGroup[] = [
       { href: '/cms/media',        label: 'Live Media',    icon: 'auto_awesome' },
       { href: '/cms/home-banners', label: 'Home Banners',  icon: 'view_carousel' },
       { href: '/cms/banners',      label: 'Promo Banners', icon: 'campaign' },
+      { href: '/cms/navigation',   label: 'Nav Menus',     icon: 'menu' },
     ],
   },
   {

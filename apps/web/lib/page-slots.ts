@@ -38,6 +38,8 @@ export interface PageSlotRecord {
   readonly ctaLabel: string | null;
   readonly ctaHref: string | null;
   readonly altText: string | null;
+  readonly tileLabel: string | null;
+  readonly tileHref: string | null;
   readonly position: number;
   readonly groupKey: string | null;
   readonly isActive: boolean;
@@ -101,7 +103,7 @@ export function resolveSlotUrl(
 export function resolveSlotText(
   slot: PageSlotRecord | undefined,
   fallback: string,
-  field: 'heading' | 'subheading' | 'body' | 'ctaLabel' | 'ctaHref' = 'heading',
+  field: 'heading' | 'subheading' | 'body' | 'ctaLabel' | 'ctaHref' | 'tileLabel' | 'tileHref' = 'heading',
 ): string {
   const v = slot?.[field];
   return v && v.length > 0 ? v : fallback;

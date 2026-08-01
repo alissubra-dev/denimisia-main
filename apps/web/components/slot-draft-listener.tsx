@@ -21,6 +21,8 @@ interface DraftPatch {
   readonly body?: string;
   readonly ctaLabel?: string;
   readonly ctaHref?: string;
+  readonly tileLabel?: string;
+  readonly tileHref?: string;
   readonly mediaUrl?: string;
   readonly mediaKind?: 'IMAGE' | 'VIDEO';
   readonly poster?: string | null;
@@ -74,6 +76,14 @@ function applyPatch(slotRef: string, patch: DraftPatch): void {
   if (patch.ctaHref !== undefined) {
     const el = root.querySelector<HTMLAnchorElement>('[data-slot-field="ctaHref"]');
     if (el) el.href = patch.ctaHref;
+  }
+  if (patch.tileLabel !== undefined) {
+    const el = root.querySelector<HTMLElement>('[data-slot-field="tileLabel"]');
+    if (el) el.textContent = patch.tileLabel;
+  }
+  if (patch.tileHref !== undefined) {
+    const el = root.querySelector<HTMLAnchorElement>('[data-slot-field="tileHref"]');
+    if (el) el.href = patch.tileHref;
   }
   // Only act on non-empty media URLs. An empty string would blank the image
   // (browsers fall back to the document URL) and wipe Next's responsive

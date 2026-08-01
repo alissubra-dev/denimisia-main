@@ -975,6 +975,8 @@ model PageSlot {
   ctaLabel      String?
   ctaHref       String?
   altText       String?
+  tileLabel     String?  // visible overlay text on the tile; null = use fallback
+  tileHref      String?  // click destination; null = use fallback
   position      Int         @default(0)
   groupKey      String?
   isActive      Boolean     @default(true)

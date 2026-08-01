@@ -49,14 +49,21 @@ export function MegaMenu({
     };
   }, []);
 
-  const resolveFeaturedSrc = (img: FeaturedImage): {
+  const resolveFeatured = (img: FeaturedImage): {
     src: string;
     alt: string;
+    label: string;
+    href: string;
   } => {
-    if (!img.slotKey) return { src: img.src, alt: img.alt };
+    if (!img.slotKey) return { src: img.src, alt: img.alt, label: img.alt, href: img.href };
     const slot = pickSlot(navSlots, img.slotKey);
     const { src } = resolveSlotUrl(slot, img.src);
-    return { src, alt: slot?.altText ?? img.alt };
+    return {
+      src,
+      alt:   slot?.altText   ?? img.alt,
+      label: slot?.tileLabel ?? img.alt,
+      href:  slot?.tileHref  ?? img.href,
+    };
   };
 
   return (
@@ -97,11 +104,12 @@ export function MegaMenu({
         {featuredImages && featuredImages.length > 0 && (
           <div className="flex gap-4">
             {featuredImages.map((img) => {
-              const resolved = resolveFeaturedSrc(img);
+              const resolved = resolveFeatured(img);
               return (
                 <Link
-                  key={img.href}
-                  href={img.href}
+                  key={`${img.slotKey ?? img.href}-${resolved.href}`}
+                  href={resolved.href}
+                  data-slot-field="tileHref"
                   onClick={onItemClick}
                   className="group relative block"
                 >
@@ -115,6 +123,14 @@ export function MegaMenu({
                       className="object-cover transition-transform duration-500 group-hover:scale-105"
                       sizes="200px"
                     />
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/85 via-ink/40 to-transparent px-3 pb-3 pt-8">
+                      <p
+                        data-slot-field="tileLabel"
+                        className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-paper"
+                      >
+                        {resolved.label}
+                      </p>
+                    </div>
                   </div>
                 </Link>
               );
