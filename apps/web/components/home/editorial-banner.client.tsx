@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 
 export interface EditorialSlide {
   readonly slotKey: string;
+  readonly slotKeyPrefix?: string;
   readonly image: string;
   readonly kind: 'IMAGE' | 'VIDEO';
   readonly poster: string | null;
@@ -42,10 +43,13 @@ export function EditorialBannerClient({ slides }: EditorialBannerClientProps) {
     >
       {slides.map((slide, i) => {
         const active = i === index;
+        const slotAttr = slide.slotKeyPrefix
+          ? `home.${slide.slotKeyPrefix}.${slide.slotKey}`
+          : `home.${slide.slotKey}`;
         return (
           <div
-            key={slide.slotKey}
-            data-slot={`home.${slide.slotKey}`}
+            key={`${slide.slotKeyPrefix ?? ''}-${slide.slotKey}`}
+            data-slot={slotAttr}
             className={`absolute inset-0 transition-opacity duration-[1200ms] ease-out ${
               active ? 'opacity-100' : 'pointer-events-none opacity-0'
             }`}

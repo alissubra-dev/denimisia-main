@@ -56,15 +56,13 @@ export const SECTION_TYPE_META: Record<HomepageSectionType, SectionTypeMeta> = {
     label: 'Hero banner',
     description: 'Fullscreen image or video at the top of the page.',
     icon: 'photo_library',
-    contentEditor: '/cms/home-banners',
-    defaultConfig: {},
+    defaultConfig: { slotKey: 'hero_main' },
   },
   CATEGORY_CARDS: {
     label: 'Category cards',
     description: 'Three tiles below the hero linking to category pages.',
     icon: 'grid_view',
-    contentEditor: '/cms/home-banners',
-    defaultConfig: {},
+    defaultConfig: { slotGroupKey: 'home.category_cards' },
   },
   NEW_ARRIVALS: {
     label: 'New arrivals row',
@@ -76,7 +74,6 @@ export const SECTION_TYPE_META: Record<HomepageSectionType, SectionTypeMeta> = {
     label: 'Editorial carousel',
     description: 'Auto-sliding fullwidth carousel of editorial slides.',
     icon: 'view_carousel',
-    contentEditor: '/cms/home-banners',
     defaultConfig: { slotGroupKey: 'home.editorial' },
   },
   BUNDLE_DEALS: {
@@ -101,16 +98,119 @@ export const SECTION_TYPE_META: Record<HomepageSectionType, SectionTypeMeta> = {
     label: 'Brand story',
     description: 'Backdrop image with brand narrative text.',
     icon: 'auto_stories',
-    contentEditor: '/cms/home-banners',
-    defaultConfig: {},
+    defaultConfig: { slotKey: 'brand_story_backdrop' },
   },
 };
 
 /** Section types whose `config` field has user-editable values. */
 export const HAS_CONFIG_FIELDS: ReadonlySet<HomepageSectionType> = new Set<HomepageSectionType>([
-  'NEW_ARRIVALS',
+  'HERO',
+  'CATEGORY_CARDS',
   'EDITORIAL_BANNER',
+  'NEW_ARRIVALS',
   'BUNDLE_DEALS',
   'TRENDING',
   'BESTSELLERS',
+  'BRAND_STORY',
 ]);
+
+/**
+ * How each section type resolves its content. Used to drive the section
+ * config form: 'single' types render a slotKey picker, 'group' types
+ * render a slotGroupKey picker, 'product' types skip slot binding.
+ */
+export const SLOT_TYPE_INFO: Record<
+  HomepageSectionType,
+  'single' | 'group' | 'product'
+> = {
+  HERO: 'single',
+  CATEGORY_CARDS: 'group',
+  EDITORIAL_BANNER: 'group',
+  BRAND_STORY: 'single',
+  NEW_ARRIVALS: 'product',
+  BESTSELLERS: 'product',
+  TRENDING: 'product',
+  BUNDLE_DEALS: 'product',
+};
+
+/**
+ * The default slotKey/slotGroupKey used when a new section is inserted.
+ * Drives both the section config default and the auto-suggestion logic
+ * in the admin insert flow.
+ */
+export const DEFAULT_SLOT_KEYS: Record<
+  Extract<HomepageSectionType, 'HERO' | 'BRAND_STORY'>,
+  string
+> = {
+  HERO: 'hero_main',
+  BRAND_STORY: 'brand_story_backdrop',
+};
+
+export const DEFAULT_SLOT_GROUP_KEYS: Record<
+  Extract<HomepageSectionType, 'CATEGORY_CARDS' | 'EDITORIAL_BANNER'>,
+  string
+> = {
+  CATEGORY_CARDS: 'home.category_cards',
+  EDITORIAL_BANNER: 'home.editorial',
+};
+
+/**
+ * Suggested unique keys for ad-hoc section instances. The admin insert
+ * flow calls this when there is already a section using the default key,
+ * and the returned suffix (e.g. _secondary, _2) is appended.
+ */
+export function slotKeySuggestionsForType(
+  type: HomepageSectionType,
+  existingKeys: readonly string[],
+): { readonly key: string; readonly isGroup: boolean } {
+  const isGroup =
+    SLOT_TYPE_INFO[type] === 'group' ||
+    type === 'CATEGORY_CARDS' ||
+    type === 'EDITORIAL_BANNER';
+
+  if (isGroup) {
+    const base =
+      type === 'EDITORIAL_BANNER'
+        ? 'home.editorial'
+        : 'home.category_cards';
+    if (!existingKeys.includes(base)) return { key: base, isGroup: true };
+    for (let i = 2; i < 50; i++) {
+      const candidate =
+        type === 'EDITORIAL_BANNER'
+          ? `home.editorial_${ordinalSuffix(i)}`
+          : `home.category_cards_${i}`;
+      if (!existingKeys.includes(candidate)) {
+        return { key: candidate, isGroup: true };
+      }
+    }
+    return { key: `${base}_${Date.now()}`, isGroup: true };
+  }
+
+  // Single-slot
+  const base =
+    type === 'HERO'
+      ? 'hero_main'
+      : type === 'BRAND_STORY'
+        ? 'brand_story_backdrop'
+        : `${type.toLowerCase()}_main`;
+  if (!existingKeys.includes(base)) return { key: base, isGroup: false };
+
+  // Try hero_aux_1, hero_aux_2, ...
+  for (let i = 1; i < 100; i++) {
+    const candidate = `${base.replace(/_main$|_backdrop$/, '')}_aux_${i}`;
+    if (!existingKeys.includes(candidate)) {
+      return { key: candidate, isGroup: false };
+    }
+  }
+  return { key: `${base}_${Date.now()}`, isGroup: false };
+}
+
+function ordinalSuffix(n: number): string {
+  // 2 -> secondary, 3 -> tertiary, 4 -> quaternary, 5+ -> n
+  const named: Record<number, string> = {
+    2: 'secondary',
+    3: 'tertiary',
+    4: 'quaternary',
+  };
+  return named[n] ?? String(n);
+}

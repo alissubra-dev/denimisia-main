@@ -1,27 +1,34 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { CATEGORY_CARDS } from '@/lib/constants';
-import { fetchPageSlots, pickSlotGroup, resolveSlotText, resolveSlotUrl } from '@/lib/page-slots';
+import { fetchPageSlots, pickSlotGroup, resolveSlotText, resolveSlotUrl, type PageSlotRecord } from '@/lib/page-slots';
 
-export async function CategoryCards() {
+interface CategoryCardsProps {
+  /**
+   * Slot group key to read. Defaults to `home.category_cards`. Each
+   * CATEGORY_CARDS instance on the homepage can point at a different
+   * groupKey (e.g. home.category_cards, home.category_cards_secondary).
+   * The number of cards rendered is driven by the slot count in the group.
+   */
+  readonly slotGroupKey?: string;
+}
+
+export async function CategoryCards({ slotGroupKey = 'home.category_cards' }: CategoryCardsProps = {}) {
   const slots = await fetchPageSlots('home');
-  const cardSlots = pickSlotGroup(slots, 'home.category_cards');
+  const cardSlots = pickSlotGroup(slots, slotGroupKey);
 
-  const cards = CATEGORY_CARDS.map((card, i) => {
-    const slot = cardSlots[i];
-    const { src } = resolveSlotUrl(slot, card.image);
-    return {
-      slotKey: slot?.slotKey ?? `category_card_${i + 1}`,
-      href:    resolveSlotText(slot, card.href, 'ctaHref'),
-      label:   resolveSlotText(slot, card.label, 'heading'),
-      subtitle: resolveSlotText(slot, card.subtitle, 'subheading'),
-      image:   src,
-      alt:     slot?.altText ?? card.label,
-    };
-  });
+  // If the group has zero slots, fall back to the legacy 3-card default.
+  // Otherwise render every slot in the group, in position order.
+  const cards =
+    cardSlots.length > 0
+      ? cardSlots.map((slot, i) => buildCard(slot, i))
+      : CATEGORY_CARDS.map((fallback, i) => buildCard(undefined, i, fallback));
 
   return (
-    <section className="denimisia-category-gallery grid grid-cols-1 md:h-[696px] md:grid-cols-3">
+    <section
+      data-slot-group={`home.${slotGroupKey}`}
+      className="denimisia-category-gallery grid grid-cols-1 md:h-[696px] md:grid-cols-3"
+    >
       {cards.map((card) => (
         <Link
           key={card.slotKey}
@@ -58,3 +65,20 @@ export async function CategoryCards() {
     </section>
   );
 }
+
+function buildCard(
+  slot: PageSlotRecord | undefined,
+  i: number,
+  fallback?: (typeof CATEGORY_CARDS)[number],
+) {
+  const { src } = resolveSlotUrl(slot, fallback?.image ?? '');
+  return {
+    slotKey: slot?.slotKey ?? `category_card_${i + 1}`,
+    href:    resolveSlotText(slot, fallback?.href ?? '#', 'ctaHref'),
+    label:   resolveSlotText(slot, fallback?.label ?? 'Category', 'heading'),
+    subtitle: resolveSlotText(slot, fallback?.subtitle ?? '', 'subheading'),
+    image:   src,
+    alt:     slot?.altText ?? fallback?.label ?? 'Category',
+  };
+}
+

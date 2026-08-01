@@ -4,6 +4,7 @@
 
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   Logger,
   NotFoundException,
@@ -12,8 +13,8 @@ import { MediaKind, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { R2StorageService } from './r2-storage.service';
 import { MediaProcessingService } from './media-processing.service';
-import { findSpec, SLOT_SPECS } from './media.config';
-import type { UpdateSlotDto } from './media.dto';
+import { findSpec, SLOT_SPECS, type SlotSpec } from './media.config';
+import type { CreateSlotDto, UpdateSlotDto } from './media.dto';
 
 const HISTORY_PER_SLOT = 10;
 
@@ -35,13 +36,137 @@ export class MediaService {
     private readonly processing: MediaProcessingService,
   ) {}
 
-  async listPage(pageKey: string) {
+  async listPage(pageKey: string, groupKey?: string) {
+    const where: Prisma.PageSlotWhereInput = { pageKey };
+    if (groupKey) where.groupKey = groupKey;
     const slots = await this.prisma.pageSlot.findMany({
-      where: { pageKey },
+      where,
       orderBy: [{ groupKey: 'asc' }, { position: 'asc' }],
       include: { asset: true },
     });
     return { slots, specs: SLOT_SPECS.filter((s) => s.pageKey === pageKey) };
+  }
+
+  async listByGroup(pageKey: string, groupKey: string) {
+    const slots = await this.prisma.pageSlot.findMany({
+      where: { pageKey, groupKey },
+      orderBy: { position: 'asc' },
+      include: { asset: true },
+    });
+    return { slots };
+  }
+
+  /**
+   * Returns a sensible default SlotSpec when no entry exists in SLOT_SPECS.
+   * Used by createSlot/ensureSlot so ad-hoc slots created from the admin
+   * still have a usable cap/aspect without the admin having to hand-tune.
+   */
+  defaultSpecFor(pageKey: string, slotKey: string): SlotSpec {
+    const existing = findSpec(pageKey, slotKey);
+    if (existing) return existing;
+    return {
+      pageKey,
+      slotKey,
+      label: `${pageKey}.${slotKey}`,
+      mediaKind: 'IMAGE',
+      acceptsVideo: true,
+      specWidth: 2560,
+      specHeight: 1440,
+      specAspect: '16:9',
+      maxBytes: 5 * 1024 * 1024,
+    };
+  }
+
+  /**
+   * Creates a new PageSlot. Auto-derives spec from findSpec() or defaultSpecFor().
+   * If a groupKey is supplied, the new slot is appended to the end of that group
+   * (MAX(position) + 1) so existing-order is preserved.
+   */
+  async createSlot(
+    pageKey: string,
+    slotKey: string,
+    dto: CreateSlotDto,
+    userId?: string,
+  ) {
+    const existing = await this.prisma.pageSlot.findFirst({
+      where: { pageKey, slotKey },
+    });
+    if (existing) {
+      throw new ConflictException(
+        `Slot already exists: ${pageKey}/${slotKey}`,
+      );
+    }
+
+    const spec = this.defaultSpecFor(pageKey, slotKey);
+
+    let position = dto.position ?? 0;
+    if (dto.groupKey && position === 0) {
+      const last = await this.prisma.pageSlot.findFirst({
+        where: { pageKey, groupKey: dto.groupKey },
+        orderBy: { position: 'desc' },
+        select: { position: true },
+      });
+      position = (last?.position ?? -1) + 1;
+    }
+
+    const slot = await this.prisma.pageSlot.create({
+      data: {
+        pageKey,
+        slotKey,
+        label: dto.label,
+        groupKey: dto.groupKey ?? null,
+        position,
+        mediaKind: (dto.mediaKind ?? spec.mediaKind) as MediaKind,
+        acceptsVideo: dto.acceptsVideo ?? spec.acceptsVideo,
+        specWidth: dto.specWidth ?? spec.specWidth,
+        specHeight: dto.specHeight ?? spec.specHeight,
+        specAspect: dto.specAspect ?? spec.specAspect,
+        maxBytes: dto.maxBytes ?? spec.maxBytes,
+        heading: dto.heading ?? null,
+        subheading: dto.subheading ?? null,
+        body: dto.body ?? null,
+        ctaLabel: dto.ctaLabel ?? null,
+        ctaHref: dto.ctaHref ?? null,
+        altText: dto.altText ?? null,
+      },
+      include: { asset: true },
+    });
+
+    // Audit history row (with no diff — this is a fresh slot).
+    this.logger.log(
+      `createSlot: ${pageKey}/${slotKey} groupKey=${dto.groupKey ?? '(none)'} user=${userId ?? 'anon'}`,
+    );
+    return slot;
+  }
+
+  /**
+   * Idempotent get-or-create. Used by the admin section composer when adding
+   * a new section that references a slotKey/groupKey that may not yet exist.
+   * Returns the existing slot if present, otherwise creates one with default spec.
+   */
+  async ensureSlot(
+    pageKey: string,
+    slotKey: string,
+    groupKey?: string,
+    userId?: string,
+  ) {
+    const existing = await this.prisma.pageSlot.findFirst({
+      where: { pageKey, slotKey },
+      include: { asset: true },
+    });
+    if (existing) return existing;
+
+    return this.createSlot(
+      pageKey,
+      slotKey,
+      {
+        pageKey,
+        slotKey,
+        label: `${pageKey}.${slotKey}`,
+        groupKey,
+      },
+      userId,
+    );
   }
 
   async listAll() {
@@ -326,6 +451,9 @@ export class MediaService {
       data.asset = dto.assetId
         ? { connect: { id: dto.assetId } }
         : { disconnect: true };
+    }
+    if (dto.groupKey !== undefined) {
+      data.groupKey = dto.groupKey || null;
     }
 
     const updated = await this.prisma.pageSlot.update({

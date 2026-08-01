@@ -19,7 +19,7 @@ import { Role, Roles } from '../../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { MediaService } from './media.service';
-import { UpdateSlotDto } from './media.dto';
+import { CreateSlotDto, UpdateSlotDto } from './media.dto';
 import { SLOT_SPECS } from './media.config';
 
 interface AuthedRequest extends Request {
@@ -110,9 +110,12 @@ export class MediaController {
   // ─── Public read: storefront pulls slots by page ──────────────────────────
 
   @Get('slots')
-  async listByPage(@Query('page') page: string) {
+  async listByPage(
+    @Query('page') page: string,
+    @Query('group') group?: string,
+  ) {
     if (!page) return { slots: [], specs: SLOT_SPECS };
-    const result = await this.media.listPage(page);
+    const result = await this.media.listPage(page, group);
     return {
       slots: result.slots.map(toPublicSlot),
       specs: result.specs,
@@ -220,5 +223,41 @@ export class MediaController {
     @Req() req: AuthedRequest,
   ) {
     return this.media.rollback(slotId, historyId, req.user?.id);
+  }
+
+  @Post('admin/slots')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SUPPORT_STAFF)
+  async createSlot(@Body() dto: CreateSlotDto, @Req() req: AuthedRequest) {
+    const slot = await this.media.createSlot(
+      dto.pageKey,
+      dto.slotKey,
+      dto,
+      req.user?.id,
+    );
+    return { ...slot, asset: slot.asset ?? null };
+  }
+
+  /**
+   * Idempotent get-or-create. Body: { pageKey, slotKey, groupKey? }.
+   * Used by the admin section composer when inserting a new section whose
+   * slotKey/groupKey may not yet exist — creates a default slot row so the
+   * /cms/home-banners editor can immediately pick it up.
+   */
+  @Post('admin/slots/ensure')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SUPPORT_STAFF)
+  async ensureSlot(
+    @Body()
+    body: { pageKey: string; slotKey: string; groupKey?: string },
+    @Req() req: AuthedRequest,
+  ) {
+    const slot = await this.media.ensureSlot(
+      body.pageKey,
+      body.slotKey,
+      body.groupKey,
+      req.user?.id,
+    );
+    return { ...slot, asset: slot.asset ?? null };
   }
 }

@@ -785,6 +785,62 @@ export const SLOT_SPECS: readonly SlotSpec[] = [
     position: index + 1,
     groupKey: 'shop.fits',
   })),
+
+  // ─── HOME — Extra slots for data-driven section composer ──────────────────
+  // These pre-registered slots let the admin pick them from the section
+  // form's slotKey/slotGroupKey dropdown without typing a new key. The admin
+  // can still type any new key — the API auto-creates a default slot on save.
+
+  // Extra hero slots (single)
+  { pageKey: PAGE_KEYS.home, slotKey: 'hero_alt_1', label: 'Hero (secondary 1)', mediaKind: 'IMAGE', acceptsVideo: true, specWidth: 2560, specHeight: 1440, specAspect: '16:9', maxBytes: 15 * MB },
+  { pageKey: PAGE_KEYS.home, slotKey: 'hero_alt_2', label: 'Hero (secondary 2)', mediaKind: 'IMAGE', acceptsVideo: true, specWidth: 2560, specHeight: 1440, specAspect: '16:9', maxBytes: 15 * MB },
+  { pageKey: PAGE_KEYS.home, slotKey: 'hero_alt_3', label: 'Hero (secondary 3)', mediaKind: 'IMAGE', acceptsVideo: true, specWidth: 2560, specHeight: 1440, specAspect: '16:9', maxBytes: 15 * MB },
+
+  // Extra brand story slots (single)
+  { pageKey: PAGE_KEYS.home, slotKey: 'brand_story_alt_1', label: 'Brand story (secondary 1)', mediaKind: 'IMAGE', acceptsVideo: true, specWidth: 2560, specHeight: 1440, specAspect: '16:9', maxBytes: 4 * MB },
+  { pageKey: PAGE_KEYS.home, slotKey: 'brand_story_alt_2', label: 'Brand story (secondary 2)', mediaKind: 'IMAGE', acceptsVideo: true, specWidth: 2560, specHeight: 1440, specAspect: '16:9', maxBytes: 4 * MB },
+
+  // Secondary category card group (6 cards)
+  ...(
+    [
+      { slug: 'straight', label: 'Straight' },
+      { slug: 'skinny', label: 'Skinny' },
+      { slug: 'flare', label: 'Flare' },
+      { slug: 'mom', label: 'Mom' },
+      { slug: 'jegging', label: 'Jegging' },
+      { slug: 'culotte', label: 'Culotte' },
+    ] as const
+  ).map((c, i) => ({
+    pageKey: PAGE_KEYS.home,
+    slotKey: `category_card_alt_${i + 1}`,
+    label: `Category card (secondary ${i + 1}) · ${c.label}`,
+    mediaKind: 'IMAGE' as const,
+    acceptsVideo: false,
+    specWidth: 1200,
+    specHeight: 1600,
+    specAspect: '3:4',
+    maxBytes: 2 * MB,
+    groupKey: 'home.category_cards_secondary',
+    position: i,
+    defaultHeading: c.label,
+  })),
+
+  // Secondary editorial carousel group (4 slides)
+  ...(
+    Array.from({ length: 4 }, (_, i) => i + 1)
+  ).map((n) => ({
+    pageKey: PAGE_KEYS.home,
+    slotKey: `editorial_secondary_slide_${n}`,
+    label: `Editorial carousel (secondary) slide ${n}`,
+    mediaKind: 'IMAGE' as const,
+    acceptsVideo: true,
+    specWidth: 2560,
+    specHeight: 1440,
+    specAspect: '16:9',
+    maxBytes: 3 * MB,
+    groupKey: 'home.editorial_secondary',
+    position: n - 1,
+  })),
 ];
 
 export function findSpec(

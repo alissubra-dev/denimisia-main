@@ -24,6 +24,13 @@ interface EditorialBannerProps {
    * different slot groups so each carousel shows different content.
    */
   readonly slotGroupKey?: string;
+  /**
+   * Optional prefix used to scope the slide's `data-slot` attribute so two
+   * editorial banners on the same page don't collide (e.g. the WYSIWYG
+   * slot overlay needs unique slotRefs). When omitted, falls back to the
+   * raw slotKey (e.g. editorial_slide_1).
+   */
+  readonly slotKeyPrefix?: string;
 }
 
 /**
@@ -34,7 +41,10 @@ interface EditorialBannerProps {
  * content are rendered. When no admin slot is filled yet, the hardcoded
  * EDITORIAL_BANNER_SLIDES fallback keeps the section visually alive.
  */
-export async function EditorialBanner({ slotGroupKey = 'home.editorial' }: EditorialBannerProps = {}) {
+export async function EditorialBanner({
+  slotGroupKey = 'home.editorial',
+  slotKeyPrefix,
+}: EditorialBannerProps = {}) {
   const slots = await fetchPageSlots('home');
   const filled = pickSlotGroup(slots, slotGroupKey).filter(isSlotFilled);
 
@@ -44,6 +54,7 @@ export async function EditorialBanner({ slotGroupKey = 'home.editorial' }: Edito
         const { src, kind, poster } = resolveSlotUrl(slot, fb.image);
         return {
           slotKey:  slot.slotKey,
+          slotKeyPrefix,
           image:    src,
           kind,
           poster,
@@ -57,6 +68,7 @@ export async function EditorialBanner({ slotGroupKey = 'home.editorial' }: Edito
       })
     : EDITORIAL_BANNER_SLIDES.map((fb, i) => ({
         slotKey:  `editorial_slide_${i + 1}`,
+        slotKeyPrefix,
         image:    fb.image,
         kind:     'IMAGE' as const,
         poster:   null,

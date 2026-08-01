@@ -88,6 +88,7 @@ export interface NewArrivalsConfig {
 
 export interface EditorialBannerConfig {
   readonly slotGroupKey: string;
+  readonly slotKeyPrefix?: string;
 }
 
 export interface BundleDealsConfig {
@@ -103,6 +104,18 @@ export interface TrendingConfig {
 export interface BestsellersConfig {
   readonly title: string;
   readonly collectionSlug?: string;
+}
+
+/** Single-slot sections (HERO, BRAND_STORY) read one PageSlot by slotKey. */
+export interface SingleSlotConfig {
+  readonly slotKey: string;
+}
+
+/** Group-slot sections (CATEGORY_CARDS, EDITORIAL_BANNER) read all slots
+ *  sharing the same groupKey. */
+export interface GroupSlotConfig {
+  readonly slotGroupKey: string;
+  readonly slotKeyPrefix?: string;
 }
 
 export function readNewArrivalsConfig(
@@ -122,6 +135,10 @@ export function readEditorialBannerConfig(
       typeof config.slotGroupKey === 'string'
         ? config.slotGroupKey
         : 'home.editorial',
+    slotKeyPrefix:
+      typeof config.slotKeyPrefix === 'string' && config.slotKeyPrefix
+        ? config.slotKeyPrefix
+        : undefined,
   };
 }
 
@@ -152,5 +169,33 @@ export function readBestsellersConfig(
       typeof config.collectionSlug === 'string'
         ? config.collectionSlug
         : undefined,
+  };
+}
+
+export function readHeroConfig(config: Record<string, unknown>): SingleSlotConfig {
+  return {
+    slotKey: typeof config.slotKey === 'string' ? config.slotKey : 'hero_main',
+  };
+}
+
+export function readBrandStoryConfig(
+  config: Record<string, unknown>,
+): SingleSlotConfig {
+  return {
+    slotKey:
+      typeof config.slotKey === 'string'
+        ? config.slotKey
+        : 'brand_story_backdrop',
+  };
+}
+
+export function readCategoryCardsConfig(
+  config: Record<string, unknown>,
+): GroupSlotConfig {
+  return {
+    slotGroupKey:
+      typeof config.slotGroupKey === 'string'
+        ? config.slotGroupKey
+        : 'home.category_cards',
   };
 }

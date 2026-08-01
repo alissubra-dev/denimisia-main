@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { adminFetch } from '@/lib/api';
 import { PageShell } from '@/components/page-shell';
@@ -91,22 +91,22 @@ const CATEGORY_CARD_FIELDS: readonly FieldSpec[] = [
   { key: 'altText',    label: 'Alt text' },
 ];
 
-const HERO_SLOT_KEYS = ['hero_main'] as const;
-const EDITORIAL_SLOT_KEYS = [
-  'editorial_slide_1',
-  'editorial_slide_2',
-  'editorial_slide_3',
-  'editorial_slide_4',
-] as const;
-const BRAND_STORY_SLOT_KEYS = ['brand_story_backdrop'] as const;
-const CATEGORY_CARD_SLOT_KEYS = [
-  'category_card_1',
-  'category_card_2',
-  'category_card_3',
-] as const;
-
-function bySlotKey(slots: readonly PageSlotRecord[]): Map<string, PageSlotRecord> {
-  return new Map(slots.map((s) => [s.slotKey, s]));
+function groupSlotsByGroupKey(
+  slots: readonly PageSlotRecord[],
+): Array<{ readonly groupKey: string; readonly slots: PageSlotRecord[] }> {
+  const map = new Map<string, PageSlotRecord[]>();
+  for (const s of slots) {
+    if (!s.groupKey) continue;
+    const list = map.get(s.groupKey) ?? [];
+    list.push(s);
+    map.set(s.groupKey, list);
+  }
+  return Array.from(map.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([groupKey, list]) => ({
+      groupKey,
+      slots: [...list].sort((a, b) => a.position - b.position),
+    }));
 }
 
 function isSlotFilled(slot: PageSlotRecord | undefined): boolean {
@@ -144,15 +144,70 @@ export default function HomeBannersPage() {
     refresh();
   }, [refresh]);
 
-  const slotByKey = useMemo(() => bySlotKey(slots), [slots]);
-
   const onSlotUpdated = useCallback((updated: PageSlotRecord) => {
     setSlots((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
   }, []);
 
-  const filledEditorialCount = useMemo(
-    () => EDITORIAL_SLOT_KEYS.filter((k) => isSlotFilled(slotByKey.get(k))).length,
-    [slotByKey],
+  // Data-driven grouping — derive every "section" from the slots fetched
+  // from the API. Each homepage section instance in /cms corresponds to a
+  // slot (single-slot types) or a slot group (group types). We surface
+  // them all so the admin can edit content for any number of instances.
+  const heroSlots = useMemo(
+    () =>
+      slots
+        .filter((s) => !s.groupKey && s.slotKey.startsWith('hero_'))
+        .sort((a, b) => a.position - b.position),
+    [slots],
+  );
+  const brandStorySlots = useMemo(
+    () =>
+      slots
+        .filter((s) => !s.groupKey && s.slotKey.startsWith('brand_story_'))
+        .sort((a, b) => a.position - b.position),
+    [slots],
+  );
+  const editorialGroups = useMemo(
+    () =>
+      groupSlotsByGroupKey(
+        slots.filter((s) => s.groupKey?.startsWith('home.editorial')),
+      ),
+    [slots],
+  );
+  const categoryCardGroups = useMemo(
+    () =>
+      groupSlotsByGroupKey(
+        slots.filter((s) => s.groupKey?.includes('category_cards')),
+      ),
+    [slots],
+  );
+
+  const totalEditorialSlots = editorialGroups.reduce((n, g) => n + g.slots.length, 0);
+  const filledEditorialCount = editorialGroups.reduce(
+    (n, g) => n + g.slots.filter((s) => isSlotFilled(s)).length,
+    0,
+  );
+
+  const createSlot = useCallback(
+    async (payload: { slotKey: string; groupKey?: string | null; label?: string }) => {
+      if (!token) throw new Error('Not authenticated');
+      const created = await adminFetch<PageSlotRecord>(
+        '/media/admin/slots',
+        token,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            pageKey: 'home',
+            slotKey: payload.slotKey,
+            groupKey: payload.groupKey ?? null,
+            label:
+              payload.label ?? payload.slotKey.replace(/_/g, ' '),
+          }),
+        },
+      );
+      setSlots((prev) => [...prev, created]);
+      return created;
+    },
+    [token],
   );
 
   return (
@@ -176,88 +231,41 @@ export default function HomeBannersPage() {
         </SurfaceCard>
       ) : (
         <div className="flex flex-col gap-8">
-          <Section title="Hero — fullscreen banner at the top of the home page">
-            {HERO_SLOT_KEYS.map((key) => {
-              const slot = slotByKey.get(key);
-              return (
-                <Fragment key={key}>
-                  {slot ? (
-                    <SlotCard
-                      slot={slot}
-                      token={token}
-                      fields={HERO_FIELDS}
-                      onUpdated={onSlotUpdated}
-                    />
-                  ) : (
-                    <MissingSlot slotKey={key} />
-                  )}
-                </Fragment>
-              );
-            })}
-          </Section>
+          <DataDrivenSection
+            title="Hero — fullscreen banner at the top of the home page"
+            slots={heroSlots}
+            fields={HERO_FIELDS}
+            token={token}
+            onUpdated={onSlotUpdated}
+            emptyMessage="No hero slots yet. Insert a Hero section from /cms to add one."
+          />
 
-          <Section
-            title={`Editorial carousel — ${filledEditorialCount}/${EDITORIAL_SLOT_KEYS.length} slides with content`}
-          >
-            {EDITORIAL_SLOT_KEYS.map((key) => {
-              const slot = slotByKey.get(key);
-              return (
-                <Fragment key={key}>
-                  {slot ? (
-                    <SlotCard
-                      slot={slot}
-                      token={token}
-                      fields={EDITORIAL_FIELDS}
-                      removable
-                      onUpdated={onSlotUpdated}
-                    />
-                  ) : (
-                    <MissingSlot slotKey={key} />
-                  )}
-                </Fragment>
-              );
-            })}
-          </Section>
+          <DataDrivenEditorialSection
+            title={`Editorial carousel — ${filledEditorialCount}/${totalEditorialSlots} slides with content`}
+            groups={editorialGroups}
+            fields={EDITORIAL_FIELDS}
+            token={token}
+            onUpdated={onSlotUpdated}
+            createSlot={createSlot}
+          />
 
-          <Section title="Brand story — backdrop image and copy on the home page">
-            {BRAND_STORY_SLOT_KEYS.map((key) => {
-              const slot = slotByKey.get(key);
-              return (
-                <Fragment key={key}>
-                  {slot ? (
-                    <SlotCard
-                      slot={slot}
-                      token={token}
-                      fields={BRAND_STORY_FIELDS}
-                      onUpdated={onSlotUpdated}
-                    />
-                  ) : (
-                    <MissingSlot slotKey={key} />
-                  )}
-                </Fragment>
-              );
-            })}
-          </Section>
+          <DataDrivenSection
+            title="Brand story — backdrop image and copy on the home page"
+            slots={brandStorySlots}
+            fields={BRAND_STORY_FIELDS}
+            token={token}
+            onUpdated={onSlotUpdated}
+            emptyMessage="No brand-story slots yet. Insert a Brand story section from /cms to add one."
+          />
 
-          <Section title="Category cards — three tiles below the hero">
-            {CATEGORY_CARD_SLOT_KEYS.map((key) => {
-              const slot = slotByKey.get(key);
-              return (
-                <Fragment key={key}>
-                  {slot ? (
-                    <SlotCard
-                      slot={slot}
-                      token={token}
-                      fields={CATEGORY_CARD_FIELDS}
-                      onUpdated={onSlotUpdated}
-                    />
-                  ) : (
-                    <MissingSlot slotKey={key} />
-                  )}
-                </Fragment>
-              );
-            })}
-          </Section>
+          <DataDrivenCategoryCardsSection
+            title="Category cards — tiles below the hero"
+            groups={categoryCardGroups}
+            fields={CATEGORY_CARD_FIELDS}
+            token={token}
+            onUpdated={onSlotUpdated}
+            createSlot={createSlot}
+          />
         </div>
       )}
     </PageShell>
@@ -279,13 +287,211 @@ function Section({ title, action, children }: SectionProps) {
   );
 }
 
-function MissingSlot({ slotKey }: { readonly slotKey: string }) {
+interface DataDrivenSectionProps {
+  readonly title: string;
+  readonly slots: readonly PageSlotRecord[];
+  readonly fields: readonly FieldSpec[];
+  readonly token: string | undefined;
+  readonly onUpdated: (slot: PageSlotRecord) => void;
+  readonly emptyMessage: string;
+}
+
+/**
+ * Section that renders one SlotCard per PageSlot. Used for single-slot
+ * sections (HERO, BRAND_STORY) where each homepage section instance has
+ * exactly one slot.
+ */
+function DataDrivenSection({
+  title,
+  slots,
+  fields,
+  token,
+  onUpdated,
+  emptyMessage,
+}: DataDrivenSectionProps) {
   return (
-    <div className="rounded border border-dashed border-outline-variant/40 px-4 py-6 text-center text-xs text-secondary">
-      Slot <code className="font-mono">{slotKey}</code> is not in the database yet.
-      Run <code className="font-mono">pnpm --filter database seed:media</code> in the
-      monorepo root, then refresh.
-    </div>
+    <Section title={title}>
+      {slots.length === 0 ? (
+        <p className="text-xs text-secondary">{emptyMessage}</p>
+      ) : (
+        slots.map((slot) => (
+          <SlotCard
+            key={slot.id}
+            slot={slot}
+            token={token}
+            fields={fields}
+            onUpdated={onUpdated}
+          />
+        ))
+      )}
+    </Section>
+  );
+}
+
+interface DataDrivenEditorialSectionProps {
+  readonly title: string;
+  readonly groups: ReadonlyArray<{ readonly groupKey: string; readonly slots: readonly PageSlotRecord[] }>;
+  readonly fields: readonly FieldSpec[];
+  readonly token: string | undefined;
+  readonly onUpdated: (slot: PageSlotRecord) => void;
+  readonly createSlot: (payload: { slotKey: string; groupKey?: string | null; label?: string }) => Promise<PageSlotRecord>;
+}
+
+/**
+ * Editorial carousel section. Each carousel on the homepage corresponds
+ * to a slot group; render one block per group, plus an Add Slide button.
+ */
+function DataDrivenEditorialSection({
+  title,
+  groups,
+  fields,
+  token,
+  onUpdated,
+  createSlot,
+}: DataDrivenEditorialSectionProps) {
+  const [addError, setAddError] = useState('');
+  const [adding, setAdding] = useState(false);
+
+  const onAddSlide = async (group: { groupKey: string; slots: readonly PageSlotRecord[] }) => {
+    setAddError('');
+    const next = group.slots.length + 1;
+    const slotKey = `${group.groupKey.replace(/[^a-z0-9_-]/g, '_')}_slide_${next}`;
+    setAdding(true);
+    try {
+      await createSlot({
+        slotKey,
+        groupKey: group.groupKey,
+        label: `Slide ${next}`,
+      });
+    } catch (err) {
+      setAddError(err instanceof Error ? err.message : 'Add slide failed');
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  return (
+    <Section title={title}>
+      {groups.length === 0 ? (
+        <p className="text-xs text-secondary">
+          No editorial carousel slots yet. Insert an Editorial banner
+          section from <code className="font-mono">/cms</code> to add one.
+        </p>
+      ) : (
+        groups.map((g) => (
+          <div key={g.groupKey} className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-secondary">
+                group: {g.groupKey}
+              </span>
+              <PrimaryButton
+                icon="add"
+                onClick={() => void onAddSlide(g)}
+                disabled={adding || !token}
+              >
+                {adding ? 'Adding…' : 'Add slide'}
+              </PrimaryButton>
+            </div>
+            {g.slots.map((slot) => (
+              <SlotCard
+                key={slot.id}
+                slot={slot}
+                token={token}
+                fields={fields}
+                removable
+                onUpdated={onUpdated}
+              />
+            ))}
+            {addError && (
+              <div className="text-xs text-[#c62828] dark:text-[#ff8a80]">{addError}</div>
+            )}
+          </div>
+        ))
+      )}
+    </Section>
+  );
+}
+
+interface DataDrivenCategoryCardsSectionProps {
+  readonly title: string;
+  readonly groups: ReadonlyArray<{ readonly groupKey: string; readonly slots: readonly PageSlotRecord[] }>;
+  readonly fields: readonly FieldSpec[];
+  readonly token: string | undefined;
+  readonly onUpdated: (slot: PageSlotRecord) => void;
+  readonly createSlot: (payload: { slotKey: string; groupKey?: string | null; label?: string }) => Promise<PageSlotRecord>;
+}
+
+/**
+ * Category cards section. Each category-cards grid on the homepage
+ * corresponds to a slot group; render one block per group with Add Card.
+ */
+function DataDrivenCategoryCardsSection({
+  title,
+  groups,
+  fields,
+  token,
+  onUpdated,
+  createSlot,
+}: DataDrivenCategoryCardsSectionProps) {
+  const [addError, setAddError] = useState('');
+  const [adding, setAdding] = useState(false);
+
+  const onAddCard = async (group: { groupKey: string; slots: readonly PageSlotRecord[] }) => {
+    setAddError('');
+    const next = group.slots.length + 1;
+    const slotKey = `${group.groupKey.replace(/[^a-z0-9_-]/g, '_')}_card_${next}`;
+    setAdding(true);
+    try {
+      await createSlot({
+        slotKey,
+        groupKey: group.groupKey,
+        label: `Card ${next}`,
+      });
+    } catch (err) {
+      setAddError(err instanceof Error ? err.message : 'Add card failed');
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  return (
+    <Section title={title}>
+      {groups.length === 0 ? (
+        <p className="text-xs text-secondary">
+          No category-card groups yet. Insert a Category cards section from
+          <code className="font-mono"> /cms</code> to add one.
+        </p>
+      ) : (
+        groups.map((g) => (
+          <div key={g.groupKey} className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-secondary">
+                group: {g.groupKey}
+              </span>
+              <PrimaryButton
+                icon="add"
+                onClick={() => void onAddCard(g)}
+                disabled={adding || !token}
+              >
+                {adding ? 'Adding…' : 'Add card'}
+              </PrimaryButton>
+            </div>
+            {g.slots.map((slot) => (
+              <SlotCard
+                key={slot.id}
+                slot={slot}
+                token={token}
+                fields={fields}
+                onUpdated={onUpdated}
+              />
+            ))}
+            {addError && (
+              <div className="text-xs text-[#c62828] dark:text-[#ff8a80]">{addError}</div>
+            )}
+          </div>
+        ))
+      )}
+    </Section>
   );
 }
 

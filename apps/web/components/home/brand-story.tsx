@@ -3,9 +3,19 @@ import Link from 'next/link';
 import { PLACEHOLDER_BRAND_STORY } from '@/lib/placeholder-images';
 import { fetchPageSlots, pickSlot, resolveSlotText, resolveSlotUrl } from '@/lib/page-slots';
 
-export async function BrandStory() {
+interface BrandStoryProps {
+  /**
+   * Which PageSlot to read. Defaults to `brand_story_backdrop`. Multiple
+   * BRAND_STORY instances on the homepage can each point at a different
+   * slotKey (e.g. brand_story_backdrop, brand_story_alt_1) so they show
+   * different content.
+   */
+  readonly slotKey?: string;
+}
+
+export async function BrandStory({ slotKey = 'brand_story_backdrop' }: BrandStoryProps = {}) {
   const slots = await fetchPageSlots('home');
-  const slot = pickSlot(slots, 'brand_story_backdrop');
+  const slot = pickSlot(slots, slotKey);
   const { src, kind, poster } = resolveSlotUrl(slot, PLACEHOLDER_BRAND_STORY);
   const heading = resolveSlotText(slot, 'Made in Bangladesh.', 'heading');
   const body = resolveSlotText(
@@ -18,7 +28,7 @@ export async function BrandStory() {
 
   return (
     <section
-      data-slot="home.brand_story_backdrop"
+      data-slot={`home.${slotKey}`}
       className="relative flex min-h-[480px] w-full items-center justify-center overflow-hidden md:h-[716px]"
     >
       {kind === 'VIDEO' ? (

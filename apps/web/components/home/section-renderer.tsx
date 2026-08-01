@@ -6,12 +6,13 @@
  * SectionRenderer picks the slice each section type needs.
  *
  * Multi-instance behaviour:
- * - Slot-based sections (Hero, CategoryCards, BrandStory) read the SAME
- *   slot keys regardless of how many instances exist. Two HERO instances
- *   show identical content (intentional — they're slot-driven).
- * - EditorialBanner accepts a `slotGroupKey` so two instances can point
+ * - Slot-based sections (HERO, CATEGORY_CARDS, BRAND_STORY) read slotKey or
+ *   slotGroupKey from `section.config` so each instance can target its own
+ *   slot. Defaults (hero_main, brand_story_backdrop, home.category_cards)
+ *   preserve the legacy visuals.
+ * - EDITORIAL_BANNER accepts a `slotGroupKey` so two instances can point
  *   at different slot groups (e.g., home.editorial + home.editorial_secondary).
- * - Product-row sections (NewArrivals, Trending, Bestsellers) currently
+ * - Product-row sections (NEW_ARRIVALS, TRENDING, BESTSELLERS) currently
  *   show the same data across instances. Per-instance product filtering
  *   is a v2 extension.
  */
@@ -31,6 +32,9 @@ import {
   readBundleDealsConfig,
   readTrendingConfig,
   readBestsellersConfig,
+  readHeroConfig,
+  readBrandStoryConfig,
+  readCategoryCardsConfig,
 } from '@/lib/homepage-sections';
 
 interface ProductCard {
@@ -57,11 +61,15 @@ interface SectionRendererProps {
 
 export async function SectionRenderer({ section, data }: SectionRendererProps) {
   switch (section.type) {
-    case 'HERO':
-      return <HeroSection />;
+    case 'HERO': {
+      const cfg = readHeroConfig(section.config);
+      return <HeroSection slotKey={cfg.slotKey} />;
+    }
 
-    case 'CATEGORY_CARDS':
-      return <CategoryCards />;
+    case 'CATEGORY_CARDS': {
+      const cfg = readCategoryCardsConfig(section.config);
+      return <CategoryCards slotGroupKey={cfg.slotGroupKey} />;
+    }
 
     case 'NEW_ARRIVALS': {
       const cfg = readNewArrivalsConfig(section.config);
@@ -75,8 +83,15 @@ export async function SectionRenderer({ section, data }: SectionRendererProps) {
     }
 
     case 'EDITORIAL_BANNER': {
-      const { slotGroupKey } = readEditorialBannerConfig(section.config);
-      return <EditorialBanner slotGroupKey={slotGroupKey} />;
+      const { slotGroupKey, slotKeyPrefix } = readEditorialBannerConfig(
+        section.config,
+      );
+      return (
+        <EditorialBanner
+          slotGroupKey={slotGroupKey}
+          slotKeyPrefix={slotKeyPrefix}
+        />
+      );
     }
 
     case 'BUNDLE_DEALS': {
@@ -100,7 +115,9 @@ export async function SectionRenderer({ section, data }: SectionRendererProps) {
       return <BestSellers products={data.bestsellers} title={cfg.title} />;
     }
 
-    case 'BRAND_STORY':
-      return <BrandStory />;
+    case 'BRAND_STORY': {
+      const cfg = readBrandStoryConfig(section.config);
+      return <BrandStory slotKey={cfg.slotKey} />;
+    }
   }
 }

@@ -12,6 +12,8 @@ import {
   type AuditLogEntry,
   SECTION_TYPE_META,
   HAS_CONFIG_FIELDS,
+  SLOT_TYPE_INFO,
+  slotKeySuggestionsForType,
 } from './section-types';
 import { InsertSectionModal } from './insert-section-modal';
 import { SectionConfigForm } from './section-config-form';
@@ -67,13 +69,16 @@ export default function CmsHubPage() {
 
   const handleInsert = async (type: HomepageSectionType) => {
     if (!token) return;
-    const config = SECTION_TYPE_META[type].defaultConfig;
+    const config = buildInsertConfig(type, sections);
     const created = await adminFetch<HomepageSection>(
       '/cms/homepage/sections',
       token,
       { method: 'POST', body: JSON.stringify({ type, config }) },
     );
     setSections((prev) => [...prev, created]);
+    // Make sure the matching PageSlot row(s) exist so /cms/home-banners can
+    // edit the new section's content immediately. ensureSlot is idempotent.
+    await ensureSlotsForConfig(type, config, token);
     void refreshHistory();
   };
 
@@ -476,4 +481,84 @@ function sectionSummary(section: HomepageSection): string {
   if (typeof cfg.slotGroupKey === 'string') parts.push(`slots: ${cfg.slotGroupKey}`);
   if (typeof cfg.collectionSlug === 'string') parts.push(`collection: ${cfg.collectionSlug}`);
   return parts.length > 0 ? parts.join(' · ') : meta.description;
+}
+
+/**
+ * Compute the default `config` for a freshly-inserted section. For
+ * slot-driven types we generate a unique key per section instance so
+ * two HEROs (or two CATEGORY_CARDS, etc.) don't end up pointing at the
+ * same slot.
+ */
+function buildInsertConfig(
+  type: HomepageSectionType,
+  existingSections: readonly HomepageSection[],
+): Record<string, unknown> {
+  const defaults = SECTION_TYPE_META[type].defaultConfig;
+
+  if (SLOT_TYPE_INFO[type] === 'product') {
+    return { ...defaults };
+  }
+
+  // Collect existing slotKey / slotGroupKey strings so we can avoid collisions.
+  const usedKeys: string[] = [];
+  for (const s of existingSections) {
+    if (s.type !== type) continue;
+    const cfg = s.config;
+    if (typeof cfg.slotKey === 'string') usedKeys.push(cfg.slotKey);
+    if (typeof cfg.slotGroupKey === 'string') usedKeys.push(cfg.slotGroupKey);
+  }
+  const suggestion = slotKeySuggestionsForType(type, usedKeys);
+
+  // For group-slot sections, override the default slotGroupKey with a
+  // unique suggestion when the default is already in use.
+  if (SLOT_TYPE_INFO[type] === 'group') {
+    return { ...defaults, slotGroupKey: suggestion.key };
+  }
+
+  // Single-slot (HERO, BRAND_STORY)
+  return { ...defaults, slotKey: suggestion.key };
+}
+
+/**
+ * After a section row is created, ensure the matching PageSlot row(s)
+ * exist so the /cms/home-banners editor shows the new section's slots.
+ * No-op for product-data sections (NEW_ARRIVALS, TRENDING, etc.).
+ */
+async function ensureSlotsForConfig(
+  type: HomepageSectionType,
+  config: Record<string, unknown>,
+  token: string | undefined,
+): Promise<void> {
+  if (!token) return;
+  if (SLOT_TYPE_INFO[type] === 'product') return;
+
+  const groupKey =
+    typeof config.slotGroupKey === 'string' && config.slotGroupKey
+      ? config.slotGroupKey
+      : undefined;
+  const slotKey =
+    typeof config.slotKey === 'string' && config.slotKey
+      ? config.slotKey
+      : undefined;
+
+  try {
+    if (groupKey) {
+      const seedKey = `${groupKey.replace(/[^a-z0-9_-]/g, '_')}_seed_1`;
+      await adminFetch('/media/admin/slots/ensure', token, {
+        method: 'POST',
+        body: JSON.stringify({
+          pageKey: 'home',
+          slotKey: seedKey,
+          groupKey,
+        }),
+      });
+    } else if (slotKey) {
+      await adminFetch('/media/admin/slots/ensure', token, {
+        method: 'POST',
+        body: JSON.stringify({ pageKey: 'home', slotKey }),
+      });
+    }
+  } catch {
+    // Non-fatal — the user can always add a slot via /cms/home-banners.
+  }
 }

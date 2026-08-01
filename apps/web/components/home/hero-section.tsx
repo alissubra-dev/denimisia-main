@@ -3,9 +3,18 @@ import Link from 'next/link';
 import { PLACEHOLDER_HERO } from '@/lib/placeholder-images';
 import { fetchPageSlots, pickSlot, resolveSlotText, resolveSlotUrl } from '@/lib/page-slots';
 
-export async function HeroSection() {
+interface HeroSectionProps {
+  /**
+   * Which PageSlot to read. Defaults to `hero_main`. Multiple HERO
+   * instances on the homepage can each point at a different slotKey
+   * (e.g. hero_main, hero_alt_1) so they show different content.
+   */
+  readonly slotKey?: string;
+}
+
+export async function HeroSection({ slotKey = 'hero_main' }: HeroSectionProps = {}) {
   const slots = await fetchPageSlots('home');
-  const slot = pickSlot(slots, 'hero_main');
+  const slot = pickSlot(slots, slotKey);
   const { src, kind, poster } = resolveSlotUrl(slot, PLACEHOLDER_HERO);
   const heading  = resolveSlotText(slot, 'Raw Collection', 'heading');
   const sub      = resolveSlotText(slot, 'A study in form, texture, and understated luxury.', 'subheading');
@@ -15,7 +24,7 @@ export async function HeroSection() {
 
   return (
     <section
-      data-slot="home.hero_main"
+      data-slot={`home.${slotKey}`}
       className="relative flex h-screen w-full items-center justify-center"
     >
       {kind === 'VIDEO' ? (
