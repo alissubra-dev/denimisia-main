@@ -1,5 +1,7 @@
 'use client';
 
+// 2026-08-01: nudge Turbopack to rebuild with new content hashes.
+
 import { useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import {
