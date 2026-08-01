@@ -298,11 +298,7 @@ export class MediaService {
   }
 
   async upload(input: UploadInput) {
-    const spec = findSpec(input.pageKey, input.slotKey);
-    if (!spec)
-      throw new NotFoundException(
-        `No spec for ${input.pageKey}/${input.slotKey}.`,
-      );
+    const spec = this.defaultSpecFor(input.pageKey, input.slotKey);
     if (spec.maxBytes === 0)
       throw new BadRequestException('This slot is text-only.');
 
