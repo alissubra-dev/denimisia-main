@@ -33,7 +33,6 @@ export const PAGE_PERMISSIONS: readonly PagePermission[] = [
   { slug: 'cms-media', label: 'Live Media', group: 'Content' },
   { slug: 'cms-home-banners', label: 'Home Banners', group: 'Content' },
   { slug: 'cms-banners', label: 'Promo Banners', group: 'Content' },
-  { slug: 'cms-navigation', label: 'Navigation Menus', group: 'Content' },
 
   { slug: 'marketing-campaigns', label: 'Campaigns', group: 'Marketing' },
   { slug: 'reviews', label: 'Reviews', group: 'Marketing' },
@@ -78,7 +77,6 @@ export const HREF_TO_SLUG: Readonly<Record<string, string>> = {
   '/cms/media': 'cms-media',
   '/cms/home-banners': 'cms-home-banners',
   '/cms/banners': 'cms-banners',
-  '/cms/navigation': 'cms-navigation',
   '/marketing/campaigns': 'marketing-campaigns',
   '/reviews': 'reviews',
   '/marketing/facebook': 'marketing-facebook',

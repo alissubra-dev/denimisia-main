@@ -16,8 +16,6 @@ export class UpdateSlotDto {
   @IsOptional() @IsString() @MaxLength(200) ctaLabel?: string;
   @IsOptional() @IsString() @MaxLength(500) ctaHref?: string;
   @IsOptional() @IsString() @MaxLength(500) altText?: string;
-  @IsOptional() @IsString() @MaxLength(200) tileLabel?: string;
-  @IsOptional() @IsString() @MaxLength(500) tileHref?: string;
   @IsOptional() @IsBoolean() isActive?: boolean;
   @IsOptional() @IsInt() position?: number;
   @IsOptional()
@@ -67,8 +65,6 @@ export class CreateSlotDto {
   @IsOptional() @IsString() @MaxLength(200) ctaLabel?: string;
   @IsOptional() @IsString() @MaxLength(500) ctaHref?: string;
   @IsOptional() @IsString() @MaxLength(500) altText?: string;
-  @IsOptional() @IsString() @MaxLength(200) tileLabel?: string;
-  @IsOptional() @IsString() @MaxLength(500) tileHref?: string;
 }
 
 export class ReorderSlotsDto {

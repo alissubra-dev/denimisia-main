@@ -128,8 +128,6 @@ export class MediaService {
         ctaLabel: dto.ctaLabel ?? null,
         ctaHref: dto.ctaHref ?? null,
         altText: dto.altText ?? null,
-        tileLabel: dto.tileLabel ?? null,
-        tileHref: dto.tileHref ?? null,
       },
       include: { asset: true },
     });
@@ -443,8 +441,6 @@ export class MediaService {
     if (dto.ctaLabel !== undefined) data.ctaLabel = dto.ctaLabel;
     if (dto.ctaHref !== undefined) data.ctaHref = dto.ctaHref;
     if (dto.altText !== undefined) data.altText = dto.altText;
-    if (dto.tileLabel !== undefined) data.tileLabel = dto.tileLabel;
-    if (dto.tileHref !== undefined) data.tileHref = dto.tileHref;
     if (dto.isActive !== undefined) data.isActive = dto.isActive;
     if (dto.position !== undefined) data.position = dto.position;
     if (dto.assetId !== undefined) {

@@ -97,22 +97,18 @@ export function FitCarousel() {
           className="scrollbar-hide flex gap-6 overflow-x-auto scroll-smooth"
         >
           {FITS.map((fit) => {
-            const slotKey = slotKeyForFit(fit.slug);
-            const slot = pickSlot(shopSlots, slotKey);
+            const slot = pickSlot(shopSlots, slotKeyForFit(fit.slug));
             const { src } = resolveSlotUrl(slot, fit.image);
-            const tileLabel = slot?.tileLabel ?? fit.label;
-            const tileHref  = slot?.tileHref  ?? `/shop/women/${fit.slug}`;
             return (
               <Link
-                key={`${slotKey}-${tileHref}`}
-                href={tileHref}
-                data-slot-field="tileHref"
+                key={fit.slug}
+                href={`/shop/women/${fit.slug}`}
                 className="group block min-w-[180px] flex-shrink-0 md:min-w-[220px]"
               >
                 <div className="relative aspect-[4/5] overflow-hidden bg-[var(--color-surface-low)]">
                   <Image
                     data-slot-field="media"
-                    data-slot={`shop.${slotKey}`}
+                    data-slot={`shop.${slotKeyForFit(fit.slug)}`}
                     src={src}
                     alt={slot?.altText ?? `${fit.label} fit`}
                     fill
@@ -121,11 +117,8 @@ export function FitCarousel() {
                   />
                   <div className="pointer-events-none absolute inset-0 bg-ink/0 transition-colors duration-500 group-hover:bg-ink/10" />
                 </div>
-                <p
-                  data-slot-field="tileLabel"
-                  className="mt-4 text-center text-xs font-medium uppercase tracking-[0.25em] text-ink"
-                >
-                  {tileLabel}
+                <p className="mt-4 text-center text-xs font-medium uppercase tracking-[0.25em] text-ink">
+                  {fit.label}
                 </p>
               </Link>
             );
