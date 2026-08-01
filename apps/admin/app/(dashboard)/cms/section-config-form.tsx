@@ -74,13 +74,13 @@ export function SectionConfigForm({
     typeof initial.limit === 'number' ? String(initial.limit) : '',
   );
   const [slotGroupKey, setSlotGroupKey] = useState(
-    getInitialSlotGroupKey(initial, DEFAULT_SLOT_GROUP_KEYS[type] ?? ''),
+    getInitialSlotGroupKey(initial, DEFAULT_SLOT_GROUP_KEYS[type as 'CATEGORY_CARDS' | 'EDITORIAL_BANNER'] ?? ''),
   );
   const [collectionSlug, setCollectionSlug] = useState(
     typeof initial.collectionSlug === 'string' ? initial.collectionSlug : '',
   );
   const [slotKey, setSlotKey] = useState(
-    getInitialSlotKey(initial, DEFAULT_SLOT_KEYS[type] ?? ''),
+    getInitialSlotKey(initial, DEFAULT_SLOT_KEYS[type as 'HERO' | 'BRAND_STORY'] ?? ''),
   );
   const [slotKeyPrefix, setSlotKeyPrefix] = useState(
     typeof initial.slotKeyPrefix === 'string' ? initial.slotKeyPrefix : '',
