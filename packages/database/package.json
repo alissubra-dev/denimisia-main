@@ -38,8 +38,8 @@
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
-    "@types/pg": "^8.20.0",
+    "@types/pg": "^8.20.3",
     "ts-node": "^10.9.2",
-    "tsx": "^4.21.0"
+    "tsx": "^4.23.5"
   }
 }
